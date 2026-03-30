@@ -15,31 +15,9 @@ A production-ready full-stack Hospital Management System built with Node.js, Exp
 ```bash
 npm install
 ```
+sword: `Admin@123`
 
-### 2. Configure Environment
-Edit `.env` file with your settings:
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/hospital_management
-JWT_SECRET=your_secret_key_here
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_gmail_app_password
-EMAIL_FROM=MediConnect <your_email@gmail.com>
-```
-
-> **Gmail Setup**: Enable 2FA → Go to Google Account → Security → App Passwords → Create one for "Mail"
-
-### 3. Seed Admin Account
-```bash
-npm run seed
-```
-This creates:
-- Email: `admin@mediconnect.com`
-- Password: `Admin@123`
-
-### 4. Run Development Server
+### 2. Run Development Server
 ```bash
 npm run dev
 ```
