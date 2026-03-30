@@ -15,14 +15,12 @@ A production-ready full-stack Hospital Management System built with Node.js, Exp
 ```bash
 npm install
 ```
-sword: `Admin@123`
 
 ### 2. Run Development Server
 ```bash
 npm run dev
 ```
 
-Open: **http://localhost:5000**
 
 ---
 
