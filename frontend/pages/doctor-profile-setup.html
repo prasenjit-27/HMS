@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Your Profile — MediConnect</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: var(--slate-100); min-height: 100vh; padding: 32px 20px; }
+    .setup-container { max-width: 720px; margin: 0 auto; }
+    .setup-header { text-align: center; margin-bottom: 40px; }
+    .setup-header .logo { font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--teal-700); margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .setup-header h1 { font-size: 32px; color: var(--slate-900); margin-bottom: 8px; }
+    .setup-header p { color: var(--slate-500); font-size: 16px; }
+    .photo-upload { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 32px; }
+    .photo-preview { width: 100px; height: 100px; border-radius: 50%; background: var(--teal-100); display: flex; align-items: center; justify-content: center; font-size: 36px; overflow: hidden; border: 3px solid var(--teal-300); cursor: pointer; position: relative; }
+    .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-preview:hover::after { content: '📷 Change'; position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; border-radius: 50%; }
+    .days-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .day-chip { padding: 8px; border: 2px solid var(--slate-200); border-radius: var(--radius-sm); text-align: center; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--slate-600); transition: var(--transition); }
+    .day-chip:hover { border-color: var(--teal-400); }
+    .day-chip.selected { background: var(--teal-600); border-color: var(--teal-600); color: white; }
+    .step-indicator { display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 32px; }
+    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--slate-300); transition: var(--transition); }
+    .step-dot.active { background: var(--teal-600); width: 28px; border-radius: 5px; }
+    .step-dot.done { background: var(--teal-400); }
+  </style>
+</head>
+<body>
+<div id="toast-container" class="toast-container"></div>
+
+<div class="setup-container">
+  <div class="setup-header">
+    <div class="logo">🏥 MediConnect</div>
+    <h1>Complete Your Doctor Profile</h1>
+    <p>Tell patients about your expertise so you can start receiving consultations</p>
+  </div>
+
+  <div class="step-indicator">
+    <div class="step-dot active" id="dot-1"></div>
+    <div class="step-dot" id="dot-2"></div>
+    <div class="step-dot" id="dot-3"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="alert" id="form-error" style="display:none"></div>
+
+      <div class="photo-upload">
+        <div class="photo-preview" onclick="document.getElementById('photo-input').click()" id="photo-preview">
+          <span>👨‍⚕️</span>
+        </div>
+        <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="previewPhoto(event)">
+        <p class="text-sm text-muted">Click to upload your photo</p>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label class="form-label">Specialization *</label>
+          <select id="specialization" class="form-control">
+            <option value="">Select specialization</option>
+            <option>General Physician</option>
+            <option>Cardiologist</option>
+            <option>Dermatologist</option>
+            <option>Neurologist</option>
+            <option>Orthopedic</option>
+            <option>Pediatrician</option>
+            <option>Psychiatrist</option>
+            <option>Gynecologist</option>
+            <option>Dentist</option>
+            <option>Ophthalmologist</option>
+            <option>ENT Specialist</option>
+            <option>Endocrinologist</option>
+            <option>Gastroenterologist</option>
+            <option>Urologist</option>
+            <option>Oncologist</option>
+            <option>Pulmonologist</option>
+            <option>Rheumatologist</option>
+            <option>Nephrologist</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Years of Experience *</label>
+          <input type="number" id="experience" class="form-control" placeholder="e.g. 8" min="0" max="60">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Qualifications</label>
+        <input type="text" id="qualifications" class="form-control" placeholder="e.g. MBBS, MD (Cardiology), FRCS">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Consultation Fee (₹)</label>
+        <input type="number" id="consultationFee" class="form-control" placeholder="e.g. 500" min="0">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Bio / About</label>
+        <textarea id="bio" class="form-control" rows="4" style="resize:vertical" placeholder="Tell patients about your background, approach to care, and expertise..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Available Days</label>
+        <div class="days-grid" id="days-grid">
+          <div class="day-chip" data-day="Monday">Mon</div>
+          <div class="day-chip" data-day="Tuesday">Tue</div>
+          <div class="day-chip" data-day="Wednesday">Wed</div>
+          <div class="day-chip" data-day="Thursday">Thu</div>
+          <div class="day-chip" data-day="Friday">Fri</div>
+          <div class="day-chip" data-day="Saturday">Sat</div>
+          <div class="day-chip" data-day="Sunday">Sun</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Available Hours</label>
+        <input type="text" id="availableHours" class="form-control" placeholder="e.g. 9:00 AM - 5:00 PM">
+      </div>
+
+      <button class="btn btn-primary btn-full btn-lg" id="save-btn" onclick="saveProfile()">
+        Save Profile & Continue
+      </button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { api, getUser, getToken, showToast } from '/js/api.js';
+
+const user = getUser();
+if (!user || !getToken()) window.location.href = '/pages/login.html';
+if (user && user.role !== 'doctor') window.location.href = '/pages/dashboard.html';
+
+const selectedDays = new Set();
+
+document.querySelectorAll('.day-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const day = chip.dataset.day;
+    if (selectedDays.has(day)) { selectedDays.delete(day); chip.classList.remove('selected'); }
+    else { selectedDays.add(day); chip.classList.add('selected'); }
+  });
+});
+
+window.previewPhoto = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const preview = document.getElementById('photo-preview');
+    preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+  };
+  reader.readAsDataURL(file);
+};
+
+window.saveProfile = async () => {
+  const specialization = document.getElementById('specialization').value;
+  const experience = document.getElementById('experience').value;
+  const errEl = document.getElementById('form-error');
+  errEl.style.display = 'none';
+
+  if (!specialization || !experience) {
+    errEl.className = 'alert alert-error';
+    errEl.textContent = 'Specialization and experience are required';
+    errEl.style.display = 'flex';
+    return;
+  }
+
+  const btn = document.getElementById('save-btn');
+  btn.innerHTML = '<span class="spinner"></span> Saving...';
+  btn.disabled = true;
+
+  try {
+    const fd = new FormData();
+    fd.append('specialization', specialization);
+    fd.append('experience', experience);
+    fd.append('qualifications', document.getElementById('qualifications').value);
+    fd.append('bio', document.getElementById('bio').value);
+    fd.append('consultationFee', document.getElementById('consultationFee').value || 0);
+    fd.append('availableDays', JSON.stringify(Array.from(selectedDays)));
+    fd.append('availableHours', document.getElementById('availableHours').value);
+    const photoInput = document.getElementById('photo-input');
+    if (photoInput.files[0]) fd.append('profilePhoto', photoInput.files[0]);
+
+    await api.postForm('/doctors/profile', fd);
+    showToast('Profile saved! Awaiting admin approval.', 'success');
+    setTimeout(() => window.location.href = '/pages/dashboard.html', 1000);
+  } catch (err) {
+    errEl.className = 'alert alert-error';
+    errEl.textContent = err.message;
+    errEl.style.display = 'flex';
+    btn.innerHTML = 'Save Profile & Continue';
+    btn.disabled = false;
+  }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — MediConnect</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .layout { display: flex; min-height: 100vh; }
+    .user-table { width: 100%; border-collapse: collapse; }
+    .user-table th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-500); border-bottom: 2px solid var(--slate-200); background: var(--slate-50); }
+    .user-table td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid var(--slate-100); vertical-align: middle; }
+    .user-table tr:hover td { background: var(--slate-50); }
+    .user-table tr:last-child td { border-bottom: none; }
+    .table-wrap { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--slate-200); overflow: hidden; box-shadow: var(--shadow-sm); overflow-x: auto; }
+    .doctor-detail-card { background: var(--white); border: 1px solid var(--slate-200); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+<div id="toast-container" class="toast-container"></div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">🏥 <span>Admin Panel</span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-section="overview" onclick="navigate('overview')"><span class="icon">📊</span> Dashboard</div>
+      <div class="nav-item" data-section="pending-doctors" onclick="navigate('pending-doctors')"><span class="icon">⏳</span> Pending Doctors <span class="nav-badge" id="pending-badge">0</span></div>
+      <div class="nav-item" data-section="all-doctors" onclick="navigate('all-doctors')"><span class="icon">👨‍⚕️</span> All Doctors</div>
+      <div class="nav-item" data-section="all-users" onclick="navigate('all-users')"><span class="icon">👥</span> All Users</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" onclick="logout()">
+        <div class="avatar" style="background:var(--teal-600);color:white">A</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">System Admin</div>
+          <div class="sidebar-user-role">Administrator</div>
+        </div>
+        <span style="color:var(--slate-400);font-size:18px">🚪</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="content-area" id="content-area">
+      <div class="flex-center" style="height:200px"><span class="spinner spinner-dark"></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="approve-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="approve-modal-title">Review Doctor Profile</h3>
+      <button class="modal-close" onclick="closeApproveModal()">✕</button>
+    </div>
+    <div class="modal-body" id="approve-modal-body"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Reject Doctor Profile</h3>
+      <button class="modal-close" onclick="closeRejectModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Reason for Rejection *</label>
+        <textarea id="reject-reason" class="form-control" rows="4" placeholder="Explain why this profile is being rejected..."></textarea>
+      </div>
+      <div style="display:flex;gap:12px">
+        <button class="btn btn-ghost flex-1" onclick="closeRejectModal()">Cancel</button>
+        <button class="btn btn-danger flex-1" onclick="confirmReject()">Confirm Rejection</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { api, getUser, getToken, clearAuth, showToast, formatDate, getInitials } from '/js/api.js';
+
+const user = getUser();
+const token = getToken();
+if (!user || !token || user.role !== 'admin') { window.location.href = '/pages/login.html'; }
+
+let currentSection = 'overview';
+let rejectDoctorId = null;
+
+window.navigate = (section) => {
+  currentSection = section;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.section === section));
+  renderSection(section);
+};
+
+window.logout = () => { clearAuth(); window.location.href = '/pages/login.html'; };
+
+async function renderSection(section) {
+  const area = document.getElementById('content-area');
+  area.innerHTML = '<div class="flex-center" style="height:200px"><span class="spinner spinner-dark"></span></div>';
+  if (section === 'overview') await renderOverview(area);
+  else if (section === 'pending-doctors') await renderDoctors(area, 'pending');
+  else if (section === 'all-doctors') await renderDoctors(area, '');
+  else if (section === 'all-users') await renderUsers(area);
+}
+
+async function renderOverview(area) {
+  try {
+    const [stats, pending] = await Promise.all([api.get('/admin/stats'), api.get('/admin/doctors?status=pending')]);
+    const s = stats.stats;
+    document.getElementById('pending-badge').textContent = s.pendingDoctors;
+    area.innerHTML = `
+      <div class="section-title">Admin Dashboard</div>
+      <div class="section-subtitle">MediConnect system overview</div>
+      <div class="grid grid-3" style="margin-bottom:32px">
+        <div class="stat-card"><div class="stat-icon">👨‍⚕️</div><div class="stat-value">${s.totalDoctors}</div><div class="stat-label">Total Doctors</div></div>
+        <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value" style="color:var(--yellow-500)">${s.pendingDoctors}</div><div class="stat-label">Pending Approval</div></div>
+        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" style="color:var(--green-500)">${s.approvedDoctors}</div><div class="stat-label">Approved Doctors</div></div>
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">${s.totalPatients}</div><div class="stat-label">Total Patients</div></div>
+        <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value">${s.totalAppointments}</div><div class="stat-label">Total Appointments</div></div>
+        <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-value" style="color:var(--teal-600)">${s.activeAppointments}</div><div class="stat-label">Active Consultations</div></div>
+      </div>
+      <div class="section-title" style="font-size:18px;margin-bottom:16px">Pending Approvals ${s.pendingDoctors > 0 ? `<span class="badge badge-pending">${s.pendingDoctors} waiting</span>` : ''}</div>
+      ${pending.doctors.length ? pending.doctors.slice(0, 5).map(d => renderDoctorRow(d, true)).join('') : '<div class="empty-state" style="padding:40px"><span class="icon">✅</span><h3>No pending approvals</h3></div>'}
+      ${pending.doctors.length > 5 ? `<button class="btn btn-ghost btn-full mt-16" onclick="navigate('pending-doctors')">View All Pending →</button>` : ''}
+    `;
+  } catch (err) { area.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+async function renderDoctors(area, status) {
+  try {
+    const url = status ? `/admin/doctors?status=${status}` : '/admin/doctors';
+    const data = await api.get(url);
+    const label = status === 'pending' ? 'Pending Approvals' : 'All Doctors';
+    area.innerHTML = `
+      <div class="section-title">${label}</div>
+      <div class="section-subtitle">${data.doctors.length} doctors</div>
+      ${!status ? `
+        <div class="tab-bar" style="width:fit-content;margin-bottom:24px">
+          <button class="tab-btn ${!status ? 'active' : ''}" onclick="navigate('all-doctors')">All</button>
+          <button class="tab-btn" onclick="navigate('pending-doctors')">Pending</button>
+        </div>
+      ` : ''}
+      ${data.doctors.length ? data.doctors.map(d => renderDoctorRow(d, status === 'pending')).join('') : `<div class="empty-state"><span class="icon">👨‍⚕️</span><h3>No ${status || ''} doctors</h3></div>`}
+    `;
+  } catch (err) { area.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+function renderDoctorRow(d, showActions) {
+  const u = d.userId || {};
+  return `<div class="appointment-row" style="cursor:default">
+    <div class="avatar">${u.profilePhoto ? `<img src="${u.profilePhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : getInitials(u.name)}</div>
+    <div class="appointment-info">
+      <div class="appointment-name">Dr. ${u.name || 'Unknown'}</div>
+      <div class="appointment-problem">${d.specialization} · ${d.experience} yrs exp · ${u.email || ''}</div>
+      <div class="text-sm text-muted mt-8">Joined ${formatDate(u.createdAt)}</div>
+    </div>
+    <div class="appointment-actions">
+      <span class="badge badge-${d.status}">${d.status}</span>
+      <button class="btn btn-ghost btn-sm" onclick="viewDoctor('${d._id}')">View</button>
+      ${showActions && d.status === 'pending' ? `
+        <button class="btn btn-success btn-sm" onclick="approveDoctor('${d._id}')">✓ Approve</button>
+        <button class="btn btn-danger btn-sm" onclick="openRejectModal('${d._id}')">✕ Reject</button>
+      ` : ''}
+    </div>
+  </div>`;
+}
+
+async function renderUsers(area) {
+  try {
+    const data = await api.get('/admin/users');
+    area.innerHTML = `
+      <div class="section-title">All Users</div>
+      <div class="section-subtitle">${data.users.length} registered users</div>
+      <div class="table-wrap">
+        <table class="user-table">
+          <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${data.users.map(u => `<tr>
+              <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:36px;height:36px;font-size:13px">${getInitials(u.name)}</div><div class="fw-600">${u.name}</div></div></td>
+              <td class="text-muted">${u.email}</td>
+              <td><span class="badge badge-info" style="text-transform:capitalize">${u.role}</span></td>
+              <td><span class="badge ${u.isVerified ? 'badge-approved' : 'badge-pending'}">${u.isVerified ? 'Verified' : 'Unverified'}</span></td>
+              <td class="text-muted">${formatDate(u.createdAt)}</td>
+              <td><button class="btn btn-danger btn-sm" onclick="deleteUser('${u._id}', '${u.name}')">Delete</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch (err) { area.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+window.viewDoctor = async (doctorId) => {
+  try {
+    const data = await api.get('/admin/doctors');
+    const d = data.doctors.find(doc => doc._id === doctorId);
+    if (!d) return;
+    const u = d.userId || {};
+    document.getElementById('approve-modal-title').textContent = `Dr. ${u.name}`;
+    document.getElementById('approve-modal-body').innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+        <div class="avatar avatar-xl">${getInitials(u.name)}</div>
+        <div>
+          <h3 style="font-size:20px">Dr. ${u.name}</h3>
+          <p class="text-muted">${d.specialization}</p>
+          <span class="badge badge-${d.status}">${d.status}</span>
+        </div>
+      </div>
+      <div class="grid grid-2" style="gap:12px;margin-bottom:16px">
+        <div style="background:var(--slate-50);padding:12px;border-radius:var(--radius-md)"><div class="text-sm text-muted">Email</div><div class="fw-600">${u.email}</div></div>
+        <div style="background:var(--slate-50);padding:12px;border-radius:var(--radius-md)"><div class="text-sm text-muted">Experience</div><div class="fw-600">${d.experience} years</div></div>
+        <div style="background:var(--slate-50);padding:12px;border-radius:var(--radius-md)"><div class="text-sm text-muted">Qualifications</div><div class="fw-600">${d.qualifications || '—'}</div></div>
+        <div style="background:var(--slate-50);padding:12px;border-radius:var(--radius-md)"><div class="text-sm text-muted">Fee</div><div class="fw-600">₹${d.consultationFee || 0}</div></div>
+      </div>
+      ${d.bio ? `<div style="background:var(--slate-50);padding:12px;border-radius:var(--radius-md);margin-bottom:16px"><div class="text-sm text-muted" style="margin-bottom:4px">Bio</div><p style="font-size:14px;line-height:1.6">${d.bio}</p></div>` : ''}
+      ${d.status === 'pending' ? `<div style="display:flex;gap:12px">
+        <button class="btn btn-success flex-1" onclick="approveDoctor('${d._id}');closeApproveModal()">✓ Approve</button>
+        <button class="btn btn-danger flex-1" onclick="closeApproveModal();openRejectModal('${d._id}')">✕ Reject</button>
+      </div>` : ''}
+    `;
+    document.getElementById('approve-modal').classList.add('active');
+  } catch (err) { showToast(err.message, 'error'); }
+};
+
+window.closeApproveModal = () => document.getElementById('approve-modal').classList.remove('active');
+
+window.approveDoctor = async (doctorId) => {
+  try {
+    await api.post('/admin/doctors/action', { doctorId, action: 'approve' });
+    showToast('Doctor approved successfully!', 'success');
+    renderSection(currentSection);
+    updatePendingBadge();
+  } catch (err) { showToast(err.message, 'error'); }
+};
+
+window.openRejectModal = (id) => {
+  rejectDoctorId = id;
+  document.getElementById('reject-reason').value = '';
+  document.getElementById('reject-modal').classList.add('active');
+};
+window.closeRejectModal = () => document.getElementById('reject-modal').classList.remove('active');
+
+window.confirmReject = async () => {
+  const reason = document.getElementById('reject-reason').value.trim();
+  if (!reason) { showToast('Please provide a rejection reason', 'warning'); return; }
+  try {
+    await api.post('/admin/doctors/action', { doctorId: rejectDoctorId, action: 'reject', reason });
+    closeRejectModal(); showToast('Doctor rejected.', 'info'); renderSection(currentSection); updatePendingBadge();
+  } catch (err) { showToast(err.message, 'error'); }
+};
+
+window.deleteUser = async (id, name) => {
+  if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return;
+  try {
+    await api.delete(`/admin/users/${id}`);
+    showToast('User deleted.', 'success'); renderSection('all-users');
+  } catch (err) { showToast(err.message, 'error'); }
+};
+
+async function updatePendingBadge() {
+  try {
+    const data = await api.get('/admin/stats');
+    document.getElementById('pending-badge').textContent = data.stats.pendingDoctors;
+  } catch {}
+}
+
+navigate('overview');
+</script>
+</body>
+</html>

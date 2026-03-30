@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — MediConnect</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .layout { display: flex; min-height: 100vh; }
+    .problem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .problem-card { background: var(--white); border: 2px solid var(--slate-200); border-radius: var(--radius-md); padding: 16px 12px; text-align: center; cursor: pointer; transition: var(--transition); }
+    .problem-card:hover, .problem-card.selected { border-color: var(--teal-500); background: var(--teal-50); }
+    .problem-card.selected .problem-icon { transform: scale(1.1); }
+    .problem-icon { font-size: 28px; margin-bottom: 8px; display: block; transition: var(--transition); }
+    .problem-label { font-size: 12px; font-weight: 600; color: var(--slate-700); line-height: 1.3; }
+    .doctors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .pending-banner { background: linear-gradient(135deg, #fef3c7, #fde68a); border: 1px solid #f59e0b; border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px; }
+    .pending-banner .icon { font-size: 40px; flex-shrink: 0; }
+    .pending-banner h3 { font-size: 18px; color: #92400e; margin-bottom: 4px; }
+    .pending-banner p { font-size: 14px; color: #78350f; }
+    .request-modal-body { display: flex; flex-direction: column; gap: 16px; }
+  </style>
+</head>
+<body>
+<div id="toast-container" class="toast-container"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🏥 <span>MediConnect</span></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user">
+        <div class="avatar" id="sidebar-avatar">?</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sidebar-name">Loading...</div>
+          <div class="sidebar-user-role" id="sidebar-role">—</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="content-area" id="content-area">
+      <div class="flex-center" style="height:200px"><span class="spinner spinner-dark"></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="request-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="request-modal-title">Send Consultation Request</h3>
+      <button class="modal-close" onclick="closeRequestModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert" id="request-error" style="display:none"></div>
+      <div class="request-modal-body">
+        <div id="selected-doctor-info"></div>
+        <div class="form-group mb-0">
+          <label class="form-label">Describe Your Problem *</label>
+          <textarea id="problem-text" class="form-control" rows="4" placeholder="Describe your symptoms, how long you've had them, and any relevant medical history..."></textarea>
+        </div>
+        <button class="btn btn-primary btn-full" id="send-request-btn" onclick="submitRequest()">Send Request</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Reject Request</h3>
+      <button class="modal-close" onclick="closeRejectModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Reason for Rejection</label>
+        <textarea id="reject-reason" class="form-control" rows="3" placeholder="Explain why you're rejecting this request..."></textarea>
+      </div>
+      <button class="btn btn-danger btn-full" onclick="confirmReject()">Confirm Rejection</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="rate-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Rate Your Consultation</h3>
+      <button class="modal-close" onclick="closeRateModal()">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center">
+      <p class="text-muted" style="margin-bottom:12px">How was your experience?</p>
+      <div class="rating-stars" id="rating-stars">
+        <span class="rating-star" data-val="1">★</span>
+        <span class="rating-star" data-val="2">★</span>
+        <span class="rating-star" data-val="3">★</span>
+        <span class="rating-star" data-val="4">★</span>
+        <span class="rating-star" data-val="5">★</span>
+      </div>
+      <div class="form-group">
+        <textarea id="rate-comment" class="form-control" rows="3" placeholder="Share your feedback (optional)..."></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitRating()">Submit Rating</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { api, getUser, getToken, clearAuth, showToast, formatDate, timeAgo, getInitials, debounce } from '/js/api.js';
+
+const user = getUser();
+const token = getToken();
+if (!user || !token) { window.location.href = '/pages/login.html'; }
+if (user.role === 'admin') { window.location.href = '/pages/admin.html'; }
+
+let currentSection = 'overview';
+let allDoctors = [];
+let selectedDoctorId = null;
+let rejectAppointmentId = null;
+let rateAppointmentId = null;
+let selectedRating = 0;
+
+const doctorNav = [
+  { id: 'overview', icon: '🏠', label: 'Overview' },
+  { id: 'requests', icon: '📋', label: 'Requests', badge: 'pending' },
+  { id: 'profile', icon: '👤', label: 'My Profile' },
+  { id: 'notifications', icon: '🔔', label: 'Notifications' },
+];
+
+const patientNav = [
+  { id: 'overview', icon: '🏠', label: 'Overview' },
+  { id: 'find-doctors', icon: '🔍', label: 'Find Doctors' },
+  { id: 'my-appointments', icon: '📋', label: 'My Appointments' },
+  { id: 'notifications', icon: '🔔', label: 'Notifications' },
+];
+
+function buildNav() {
+  const items = user.role === 'doctor' ? doctorNav : patientNav;
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = items.map(i => `
+    <div class="nav-item" data-section="${i.id}" onclick="navigate('${i.id}')">
+      <span class="icon">${i.icon}</span>
+      <span>${i.label}</span>
+    </div>
+  `).join('') + `<div class="nav-item" onclick="logout()" style="margin-top:auto;color:var(--red-500)">
+    <span class="icon">🚪</span><span>Logout</span>
+  </div>`;
+
+  document.getElementById('sidebar-avatar').textContent = getInitials(user.name);
+  document.getElementById('sidebar-name').textContent = user.name;
+  document.getElementById('sidebar-role').textContent = user.role;
+}
+
+window.navigate = (section) => {
+  currentSection = section;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.section === section));
+  renderSection(section);
+};
+
+window.logout = async () => {
+  try { await api.post('/auth/logout'); } catch {}
+  clearAuth();
+  window.location.href = '/pages/login.html';
+};
+
+async function renderSection(section) {
+  const area = document.getElementById('content-area');
+  area.innerHTML = '<div class="flex-center" style="height:200px"><span class="spinner spinner-dark"></span></div>';
+
+  if (section === 'overview') {
+    if (user.role === 'doctor') await renderDoctorOverview(area);
+    else await renderPatientOverview(area);
+  } else if (section === 'requests') {
+    await renderDoctorRequests(area);
+  } else if (section === 'find-doctors') {
+    await renderFindDoctors(area);
+  } else if (section === 'my-appointments') {
+    await renderPatientAppointments(area);
+  } else if (section === 'profile') {
+    await renderDoctorProfile(area);
+  } else if (section === 'notifications') {
+    await renderNotifications(area);
+  }
+}
+
+async function renderDoctorOverview(area) {
+  try {
+    const [requestsData, meData] = await Promise.all([api.get('/doctors/requests/all'), api.get('/auth/me')]);
+    const appts = requestsData.appointments;
+    const pending = appts.filter(a => a.status === 'pending').length;
+    const accepted = appts.filter(a => a.status === 'accepted').length;
+    const closed = appts.filter(a => a.status === 'closed').length;
+    const doctorProfile = meData.profileData;
+    const statusBanner = doctorProfile ? (
+      doctorProfile.status === 'pending' ? `<div class="pending-banner"><div class="icon">⏳</div><div><h3>Profile Under Review</h3><p>Your doctor profile is awaiting admin approval. You'll be notified once approved.</p></div></div>` :
+      doctorProfile.status === 'rejected' ? `<div class="pending-banner" style="background:linear-gradient(135deg,#fee2e2,#fecaca);border-color:#ef4444"><div class="icon">❌</div><div><h3 style="color:#991b1b">Profile Rejected</h3><p style="color:#7f1d1d">Reason: ${doctorProfile.rejectionReason || 'Contact admin for details'}</p></div></div>` : ''
+    ) : `<div class="pending-banner"><div class="icon">👤</div><div><h3>Complete Your Profile</h3><p>You haven't set up your doctor profile yet.</p><a href="/pages/doctor-profile-setup.html" class="btn btn-sm btn-primary" style="margin-top:10px">Setup Profile</a></div></div>`;
+
+    area.innerHTML = `
+      <div class="section-title">Good day, Dr. ${user.name.split(' ')[0]}! 👋</div>
+      <div class="section-subtitle">Here's your consultation overview</div>
+      ${statusBanner}
+      <div class="grid grid-4" style="margin-bottom:32px">
+        <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value">${appts.length}</div><div class="stat-label">Total Requests</div></div>
+        <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value">${pending}</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-value">${accepted}</div><div class="stat-label">Active Chats</div></div>
+        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value">${closed}</div><div class="stat-label">Completed</div></div>
+      </div>
+      <div class="section-title" style="font-size:18px;margin-bottom:16px">Recent Requests</div>
+      ${appts.slice(0, 5).length ? appts.slice(0, 5).map(a => renderAppointmentRow(a, 'doctor')).join('') : '<div class="empty-state"><span class="icon">📭</span><h3>No requests yet</h3><p>Patient requests will appear here</p></div>'}
+      ${appts.length > 5 ? `<button class="btn btn-ghost btn-full mt-16" onclick="navigate('requests')">View All Requests →</button>` : ''}
+    `;
+  } catch (err) { area.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+async function renderPatientOverview(area) {
+  try {
+    const data = await api.get('/patient/appointments');
+    const appts = data.appointments;
+    const pending = appts.filter(a => a.status === 'pending').length;
+    const active = appts.filter(a => a.status === 'accepted').length;
+    area.innerHTML = `
+      <div class="section-title">Hello, ${user.name.split(' ')[0]}! 👋</div>
+      <div class="section-subtitle">Manage your health consultations</div>
+      <div class="grid grid-4" style="margin-bottom:32px">
+        <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value">${appts.length}</div><div class="stat-label">Total Consultations</div></div>
+        <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value">${pending}</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-value">${active}</div><div class="stat-label">Active</div></div>
+        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value">${appts.filter(a=>a.status==='closed').length}</div><div class="stat-label">Completed</div></div>
+      </div>
+      <div class="flex-between" style="margin-bottom:16px">
+        <div class="section-title" style="font-size:18px">My Consultations</div>
+        <button class="btn btn-primary btn-sm" onclick="navigate('find-doctors')">+ New Consultation</button>
+      </div>
+      ${appts.slice(0,5).length ? appts.slice(0,5).map(a => renderPatientAppointmentRow(a)).join('') : '<div class="empty-state"><span class="icon">🏥</span><h3>No consultations yet</h3><p>Find a doctor and send your first request</p><button class="btn btn-primary mt-16" onclick="navigate(\'find-doctors\')">Find Doctors</button></div>'}
+    `;
+  } catch (err) { area.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+async function renderDoctorRequests(area) {
+  try {
+    const data = await api.get('/doctors/requests/all');
+    const appts = data.appointments;
+    const pending = appts.filter(a => a.status === 'pending');
+    area.innerHTML = `
+      <div class="section-title">Consultation Requests</div>
+      <div class="section-subtitle">${appts.length} total requests</div>
+      <div class="tab-bar" id="req-tabs">
+        <button class="tab-btn active" onclick="filterRequests('all', this)">All (${appts.length})</button>
+        <button class="tab-btn" onclick="filterRequests('pending', this)">Pending (${pending.length})</button>
+        <button class="tab-btn" onclick="filterRequests('accepted', this)">Active (${appts.filter(a=>a.status==='accepted').length})</button>
+        <button class="tab-btn" onclick="filterRequests('closed', this)">Closed (${appts.filter(a=>a.status==='closed').length})</button>
+      </div>
+      <div id="requests-list">${appts.map(a => renderAppointmentRow(a, 'doctor')).join('') || '<div class="empty-state"><span class="icon">📭</span><h3>No requests</h3></div>'}</div>
+    `;
+    window._allRequests = appts;
+  } catch (err) { area.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+window.filterRequests = (status, btn) => {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const list = document.getElementById('requests-list');
+  const filtered = status === 'all' ? window._allRequests : window._allRequests.filter(a => a.status === status);
+  list.innerHTML = filtered.map(a => renderAppointmentRow(a, 'doctor')).join('') || '<div class="empty-state"><span class="icon">📭</span><h3>No requests</h3></div>';
+};
+
+function renderAppointmentRow(a, viewAs) {
+  const patient = a.patientId;
+  const initials = getInitials(patient?.name || 'P');
+  const actions = viewAs === 'doctor' ? (
+    a.status === 'pending' ? `
+      <button class="btn btn-success btn-sm" onclick="acceptRequest('${a._id}')">✓ Accept</button>
+      <button class="btn btn-danger btn-sm" onclick="openRejectModal('${a._id}')">✕ Reject</button>
+    ` : a.status === 'accepted' ? `
+      <a href="/pages/chat.html?appointmentId=${a._id}" class="btn btn-primary btn-sm">💬 Chat</a>
+      <button class="btn btn-ghost btn-sm" onclick="closeConsultation('${a._id}')">Close</button>
+    ` : ''
+  ) : '';
+
+  return `<div class="appointment-row">
+    <div class="avatar">${initials}</div>
+    <div class="appointment-info">
+      <div class="appointment-name">${patient?.name || 'Patient'}</div>
+      <div class="appointment-problem">${a.problem}</div>
+      <div class="text-sm text-muted mt-8">${formatDate(a.createdAt)}</div>
+    </div>
+    <div class="appointment-actions">
+      <span class="badge badge-${a.status}">${a.status}</span>
+      ${actions}
+    </div>
+  </div>`;
+}
+
+function renderPatientAppointmentRow(a) {
+  const doctor = a.doctorId;
+  const dp = a.doctorProfile;
+  const initials = getInitials(doctor?.name || 'D');
+  const chatBtn = a.status === 'accepted' ? `<a href="/pages/chat.html?appointmentId=${a._id}" class="btn btn-primary btn-sm">💬 Chat</a>` : '';
+  const rateBtn = a.status === 'closed' && !a.isRated ? `<button class="btn btn-sm" style="background:var(--yellow-100);color:#92400e" onclick="openRateModal('${a._id}')">⭐ Rate</button>` : '';
+  return `<div class="appointment-row">
+    <div class="avatar">${initials}</div>
+    <div class="appointment-info">
+      <div class="appointment-name">Dr. ${doctor?.name || 'Doctor'}</div>
+      <div class="appointment-problem">${dp?.specialization || ''} · ${a.problem}</div>
+      <div class="text-sm text-muted mt-8">${formatDate(a.createdAt)}</div>
+    </div>
+    <div class="appointment-actions">
+      <span class="badge badge-${a.status}">${a.status}</span>
+      ${chatBtn}${rateBtn}
+    </div>
+  </div>`;
+}
+
+async function renderFindDoctors(area) {
+  area.innerHTML = `
+    <div class="section-title">Find a Doctor</div>
+    <div class="section-subtitle">Select your health concern or search directly</div>
+    <div class="problem-grid" id="problem-grid">${renderProblems()}</div>
+    <div class="flex-between" style="margin-bottom:20px;gap:12px;flex-wrap:wrap">
+      <div class="search-bar" style="flex:1;min-width:200px">
+        <span class="icon">🔍</span>
+        <input type="text" placeholder="Search doctors by name or specialization..." id="doc-search" oninput="searchDoctors()">
+      </div>
+      <select class="form-control" style="width:auto" id="fee-filter" onchange="searchDoctors()">
+        <option value="">Any fee</option>
+        <option value="200">Under ₹200</option>
+        <option value="500">Under ₹500</option>
+        <option value="1000">Under ₹1000</option>
+      </select>
+    </div>
+    <div id="doctors-grid" class="doctors-grid"><div class="flex-center" style="height:150px"><span class="spinner spinner-dark"></span></div></div>
+  `;
+  setupProblemCards();
+  await loadDoctors();
+}
+
+function renderProblems() {
+  const problems = [
+    { icon: '❤️', label: 'Heart Issues', spec: 'Cardiologist' },
+    { icon: '🧠', label: 'Neurology', spec: 'Neurologist' },
+    { icon: '🦴', label: 'Bone & Joint', spec: 'Orthopedic' },
+    { icon: '👶', label: "Children's Health", spec: 'Pediatrician' },
+    { icon: '🧴', label: 'Skin Problems', spec: 'Dermatologist' },
+    { icon: '🧬', label: 'Mental Health', spec: 'Psychiatrist' },
+    { icon: '👁️', label: 'Eye Care', spec: 'Ophthalmologist' },
+    { icon: '🫁', label: 'Lungs & Breath', spec: 'Pulmonologist' },
+    { icon: '🦷', label: 'Dental', spec: 'Dentist' },
+    { icon: '🔬', label: 'General', spec: 'General Physician' },
+    { icon: '🏥', label: 'All Doctors', spec: 'all' },
+  ];
+  return problems.map(p => `<div class="problem-card" data-spec="${p.spec}" onclick="selectProblem(this, '${p.spec}')"><span class="problem-icon">${p.icon}</span><div class="problem-label">${p.label}</div></div>`).join('');
+}
+
+function setupProblemCards() {}
+
+window.selectProblem = async (el, spec) => {
+  document.querySelectorAll('.problem-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  await loadDoctors(spec);
+};
+
+async function loadDoctors(spec = 'all') {
+  try {
+    const search = document.getElementById('doc-search')?.value || '';
+    const fee = document.getElementById('fee-filter')?.value || '';
+    let url = `/doctors?specialization=${spec}&search=${search}`;
+    if (fee) url += `&maxFee=${fee}`;
+    const data = await api.get(url);
+    allDoctors = data.doctors;
+    renderDoctorCards();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+window.searchDoctors = debounce(async () => {
+  const spec = document.querySelector('.problem-card.selected')?.dataset.spec || 'all';
+  await loadDoctors(spec);
+}, 400);
+
+function renderDoctorCards() {
+  const grid = document.getElementById('doctors-grid');
+  if (!grid) return;
+  if (!allDoctors.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><span class="icon">🔍</span><h3>No doctors found</h3><p>Try a different search or specialization</p></div>';
+    return;
+  }
+  grid.innerHTML = allDoctors.map(d => {
+    const u = d.userId || {};
+    const stars = '★'.repeat(Math.round(d.rating || 0)) + '☆'.repeat(5 - Math.round(d.rating || 0));
+    const onlineStatus = u.isOnline ? '<span class="online-dot"></span> Online' : 'Offline';
+    return `<div class="doctor-card" onclick="openRequestModal('${u._id}', '${(u.name||'').replace(/'/g,"\\'")}', '${d.specialization}')">
+      <div class="doctor-card-header">
+        <div class="avatar avatar-lg">${getInitials(u.name)}</div>
+        <div class="doctor-info">
+          <h3>Dr. ${u.name}</h3>
+          <p>${d.specialization}</p>
+          <p class="text-sm" style="color:${u.isOnline?'var(--green-500)':'var(--slate-400)'}">${onlineStatus}</p>
+        </div>
+      </div>
+      <div class="doctor-tags">
+        <span class="doctor-tag">${d.experience} yrs exp</span>
+        ${d.qualifications ? `<span class="doctor-tag">${d.qualifications.split(',')[0]}</span>` : ''}
+        ${d.consultationFee ? `<span class="doctor-tag">₹${d.consultationFee}</span>` : '<span class="doctor-tag">Free</span>'}
+      </div>
+      ${d.bio ? `<p class="text-sm text-muted" style="margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${d.bio}</p>` : ''}
+      <div class="flex-between">
+        <div class="doctor-rating"><span style="color:var(--yellow-500)">${stars.slice(0,1)}</span> ${d.rating ? Number(d.rating).toFixed(1) : 'New'} ${d.ratingCount ? `(${d.ratingCount})` : ''}</div>
+        <button class="btn btn-primary btn-sm">Request →</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function renderPatientAppointments(area) {
+  try {
+    const data = await api.get('/patient/appointments');
+    area.innerHTML = `
+      <div class="section-title">My Consultations</div>
+      <div class="section-subtitle">${data.appointments.length} total</div>
+      ${data.appointments.length ? data.appointments.map(a => renderPatientAppointmentRow(a)).join('') : '<div class="empty-state"><span class="icon">📋</span><h3>No consultations yet</h3><button class="btn btn-primary mt-16" onclick="navigate(\'find-doctors\')">Find a Doctor</button></div>'}
+    `;
+  } catch (err) { area.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+async function renderDoctorProfile(area) {
+  try {
+    const data = await api.get('/doctors/profile/me');
+    const d = data.doctor;
+    area.innerHTML = `
+      <div class="section-title">My Profile</div>
+      <div class="section-subtitle">Manage your doctor profile</div>
+      <div class="card" style="max-width:600px">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px">
+            <div class="avatar avatar-xl">${d.profilePhoto ? `<img src="${d.profilePhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : getInitials(user.name)}</div>
+            <div><h2 style="font-size:22px">Dr. ${user.name}</h2><p class="text-muted">${d.specialization}</p><span class="badge badge-${d.status}">${d.status}</span></div>
+          </div>
+          <div class="grid grid-2">
+            <div><div class="text-sm text-muted">Experience</div><div class="fw-600">${d.experience} years</div></div>
+            <div><div class="text-sm text-muted">Consultation Fee</div><div class="fw-600">₹${d.consultationFee || 0}</div></div>
+            <div><div class="text-sm text-muted">Rating</div><div class="fw-600">⭐ ${d.rating ? Number(d.rating).toFixed(1) : 'No ratings yet'}</div></div>
+            <div><div class="text-sm text-muted">Qualifications</div><div class="fw-600">${d.qualifications || '—'}</div></div>
+          </div>
+          ${d.bio ? `<div class="mt-16"><div class="text-sm text-muted" style="margin-bottom:4px">Bio</div><p style="font-size:14px;line-height:1.6">${d.bio}</p></div>` : ''}
+          <div class="mt-16">
+            <a href="/pages/doctor-profile-setup.html" class="btn btn-outline">Edit Profile</a>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch {
+    area.innerHTML = `<div class="empty-state"><span class="icon">👤</span><h3>No profile yet</h3><a href="/pages/doctor-profile-setup.html" class="btn btn-primary mt-16">Create Profile</a></div>`;
+  }
+}
+
+async function renderNotifications(area) {
+  try {
+    const data = await api.get('/auth/me');
+    const notifs = data.user.notifications || [];
+    area.innerHTML = `
+      <div class="flex-between" style="margin-bottom:24px">
+        <div><div class="section-title">Notifications</div><div class="section-subtitle">${notifs.length} total</div></div>
+        ${notifs.length ? `<button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark All Read</button>` : ''}
+      </div>
+      ${notifs.length ? notifs.map(n => `
+        <div class="notification-item ${n.read ? '' : 'unread'}">
+          <div>${n.message}</div>
+          <div class="notification-time">${timeAgo(n.createdAt)}</div>
+        </div>
+      `).join('') : '<div class="empty-state"><span class="icon">🔔</span><h3>No notifications</h3></div>'}
+    `;
+    await api.post('/patient/notifications/read');
+  } catch (err) { area.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+window.markAllRead = async () => {
+  try { await api.post('/patient/notifications/read'); showToast('All notifications marked as read'); renderSection('notifications'); } catch {}
+};
+
+window.openRequestModal = (doctorId, name, spec) => {
+  selectedDoctorId = doctorId;
+  document.getElementById('request-modal-title').textContent = `Consult Dr. ${name}`;
+  document.getElementById('selected-doctor-info').innerHTML = `
+    <div class="flex gap-12" style="background:var(--teal-50);border-radius:var(--radius-md);padding:14px">
+      <div class="avatar">${getInitials(name)}</div>
+      <div><div class="fw-600">Dr. ${name}</div><div class="text-sm text-muted">${spec}</div></div>
+    </div>`;
+  document.getElementById('problem-text').value = '';
+  document.getElementById('request-error').style.display = 'none';
+  document.getElementById('request-modal').classList.add('active');
+};
+
+window.closeRequestModal = () => document.getElementById('request-modal').classList.remove('active');
+
+window.submitRequest = async () => {
+  const problem = document.getElementById('problem-text').value.trim();
+  const errEl = document.getElementById('request-error');
+  if (!problem) { errEl.className = 'alert alert-error'; errEl.textContent = 'Please describe your problem'; errEl.style.display = 'flex'; return; }
+  const btn = document.getElementById('send-request-btn');
+  btn.innerHTML = '<span class="spinner"></span> Sending...'; btn.disabled = true;
+  try {
+    await api.post('/patient/request', { doctorId: selectedDoctorId, problem });
+    closeRequestModal();
+    showToast('Consultation request sent!', 'success');
+    navigate('my-appointments');
+  } catch (err) {
+    errEl.className = 'alert alert-error'; errEl.textContent = err.message; errEl.style.display = 'flex';
+    btn.innerHTML = 'Send Request'; btn.disabled = false;
+  }
+};
+
+window.acceptRequest = async (id) => {
+  try {
+    await api.post('/doctors/requests/respond', { appointmentId: id, action: 'accept' });
+    showToast('Request accepted! Chat enabled.', 'success');
+    renderSection(currentSection);
+  } catch (err) { showToast(err.message, 'error'); }
+};
+
+window.openRejectModal = (id) => {
+  rejectAppointmentId = id;
+  document.getElementById('reject-reason').value = '';
+  document.getElementById('reject-modal').classList.add('active');
+};
+window.closeRejectModal = () => document.getElementById('reject-modal').classList.remove('active');
+
+window.confirmReject = async () => {
+  const reason = document.getElementById('reject-reason').value.trim();
+  try {
+    await api.post('/doctors/requests/respond', { appointmentId: rejectAppointmentId, action: 'reject', rejectionReason: reason });
+    closeRejectModal(); showToast('Request rejected.', 'info'); renderSection(currentSection);
+  } catch (err) { showToast(err.message, 'error'); }
+};
+
+window.closeConsultation = async (id) => {
+  if (!confirm('Close this consultation? Chat will be disabled permanently.')) return;
+  try {
+    await api.post('/doctors/consultation/close', { appointmentId: id });
+    showToast('Consultation closed.', 'success'); renderSection(currentSection);
+  } catch (err) { showToast(err.message, 'error'); }
+};
+
+window.openRateModal = (id) => {
+  rateAppointmentId = id; selectedRating = 0;
+  document.querySelectorAll('.rating-star').forEach(s => s.classList.remove('selected'));
+  document.getElementById('rate-comment').value = '';
+  document.getElementById('rate-modal').classList.add('active');
+};
+window.closeRateModal = () => document.getElementById('rate-modal').classList.remove('active');
+
+document.querySelectorAll('.rating-star').forEach(star => {
+  star.addEventListener('click', () => {
+    selectedRating = parseInt(star.dataset.val);
+    document.querySelectorAll('.rating-star').forEach((s, i) => s.classList.toggle('selected', i < selectedRating));
+  });
+  star.addEventListener('mouseover', () => {
+    const v = parseInt(star.dataset.val);
+    document.querySelectorAll('.rating-star').forEach((s, i) => s.classList.toggle('selected', i < v));
+  });
+});
+document.getElementById('rating-stars').addEventListener('mouseleave', () => {
+  document.querySelectorAll('.rating-star').forEach((s, i) => s.classList.toggle('selected', i < selectedRating));
+});
+
+window.submitRating = async () => {
+  if (!selectedRating) { showToast('Please select a rating', 'warning'); return; }
+  try {
+    await api.post('/patient/rate', { appointmentId: rateAppointmentId, rating: selectedRating, comment: document.getElementById('rate-comment').value });
+    closeRateModal(); showToast('Rating submitted! Thank you.', 'success'); renderSection(currentSection);
+  } catch (err) { showToast(err.message, 'error'); }
+};
+
+buildNav();
+navigate('overview');
+</script>
+</body>
+</html>

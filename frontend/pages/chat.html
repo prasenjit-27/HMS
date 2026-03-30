@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat — MediConnect</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/chat.css">
+</head>
+<body style="background:var(--slate-50);overflow:hidden">
+<div id="toast-container" class="toast-container"></div>
+
+<nav class="nav">
+  <a href="/pages/dashboard.html" class="nav-logo">
+    <span style="font-size:20px">←</span> 🏥 <span>MediConnect</span>
+  </a>
+  <div class="nav-actions">
+    <span id="nav-user-name" class="text-muted text-sm"></span>
+    <div class="avatar" id="nav-avatar">?</div>
+  </div>
+</nav>
+
+<div class="chat-layout">
+  <div class="chat-sidebar" id="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <h3>Consultations</h3>
+      <div class="search-bar">
+        <span class="icon">🔍</span>
+        <input type="text" placeholder="Search..." id="chat-search" oninput="filterChats()">
+      </div>
+    </div>
+    <div class="chat-list" id="chat-list">
+      <div class="flex-center" style="padding:40px"><span class="spinner spinner-dark"></span></div>
+    </div>
+  </div>
+
+  <div class="chat-main" id="chat-main">
+    <div class="no-chat-selected">
+      <div class="icon">💬</div>
+      <p>Select a consultation to start chatting</p>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" style="display:none" onchange="handleFileUpload(event)">
+
+<script src="/socket.io/socket.io.js"></script>
+<script type="module">
+import { api, getUser, getToken, clearAuth, showToast, formatTime, timeAgo, getInitials, getFileIcon, formatFileSize } from '/js/api.js';
+
+const user = getUser();
+const token = getToken();
+if (!user || !token) { window.location.href = '/pages/login.html'; }
+
+document.getElementById('nav-user-name').textContent = user.name;
+document.getElementById('nav-avatar').textContent = getInitials(user.name);
+
+let socket;
+let currentAppointmentId = null;
+let currentChatData = null;
+let allChats = [];
+let typingTimer;
+
+function connectSocket() {
+  socket = io({ auth: { token } });
+  socket.on('connect', () => console.log('Socket connected'));
+  socket.on('connect_error', (err) => console.error('Socket error:', err.message));
+
+  socket.on('new_message', ({ message, appointmentId }) => {
+    if (appointmentId === currentAppointmentId) {
+      appendMessage(message);
+      scrollToBottom();
+    }
+    updateChatPreview(appointmentId, message);
+  });
+
+  socket.on('typing', ({ userId: tUserId, userName, isTyping }) => {
+    if (tUserId === user.id) return;
+    const indicator = document.getElementById('typing-indicator');
+    if (!indicator) return;
+    indicator.style.display = isTyping ? 'flex' : 'none';
+  });
+
+  socket.on('user_status', ({ userId: uid, isOnline }) => {
+    if (currentChatData) {
+      const participants = currentChatData.chat?.participants || [];
+      const otherUser = participants.find(p => p._id?.toString() === uid || p === uid);
+      if (otherUser) updateOnlineStatus(isOnline);
+    }
+    const listItem = document.querySelector(`[data-chat-user="${uid}"]`);
+    if (listItem) {
+      const dot = listItem.querySelector('.online-dot');
+      if (dot) dot.className = `online-dot${isOnline ? '' : ' offline'}`;
+    }
+  });
+
+  socket.on('error', ({ message }) => showToast(message, 'error'));
+}
+
+async function loadChats() {
+  try {
+    let appointments = [];
+    if (user.role === 'doctor') {
+      const data = await api.get('/doctors/requests/all');
+      appointments = data.appointments.filter(a => ['accepted', 'closed'].includes(a.status));
+    } else {
+      const data = await api.get('/patient/appointments');
+      appointments = data.appointments.filter(a => ['accepted', 'closed'].includes(a.status));
+    }
+    allChats = appointments;
+    renderChatList(appointments);
+
+    const params = new URLSearchParams(window.location.search);
+    const apptId = params.get('appointmentId');
+    if (apptId) openChat(apptId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+function renderChatList(appointments) {
+  const list = document.getElementById('chat-list');
+  if (!appointments.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:40px 20px"><span class="icon" style="font-size:40px">💬</span><h3 style="font-size:15px">No active chats</h3><p>Accept consultation requests to start chatting</p></div>';
+    return;
+  }
+  list.innerHTML = appointments.map(a => {
+    const other = user.role === 'doctor' ? a.patientId : a.doctorId;
+    const name = other?.name || 'Unknown';
+    const isActive = a.status === 'accepted';
+    return `<div class="chat-list-item" data-id="${a._id}" data-chat-user="${other?._id || ''}" onclick="openChat('${a._id}')">
+      <div style="position:relative">
+        <div class="avatar">${getInitials(name)}</div>
+        ${isActive ? `<span class="online-dot" style="position:absolute;bottom:0;right:0;border-width:2px"></span>` : ''}
+      </div>
+      <div class="chat-list-item-info">
+        <div class="chat-list-item-name">${user.role === 'doctor' ? '' : 'Dr. '}${name}</div>
+        <div class="chat-list-item-preview">${a.problem}</div>
+        <div class="chat-list-item-time">${timeAgo(a.updatedAt || a.createdAt)}</div>
+      </div>
+      ${a.status === 'closed' ? '<span class="badge badge-closed" style="font-size:10px">Closed</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+window.filterChats = () => {
+  const q = document.getElementById('chat-search').value.toLowerCase();
+  const filtered = allChats.filter(a => {
+    const other = user.role === 'doctor' ? a.patientId : a.doctorId;
+    return other?.name?.toLowerCase().includes(q) || a.problem?.toLowerCase().includes(q);
+  });
+  renderChatList(filtered);
+};
+
+window.openChat = async (appointmentId) => {
+  currentAppointmentId = appointmentId;
+  document.querySelectorAll('.chat-list-item').forEach(el => el.classList.toggle('active', el.dataset.id === appointmentId));
+  const main = document.getElementById('chat-main');
+  main.innerHTML = '<div class="flex-center" style="height:100%"><span class="spinner spinner-dark"></span></div>';
+  try {
+    const data = await api.get(`/chat/${appointmentId}`);
+    currentChatData = data;
+    const { chat, appointment } = data;
+    const other = user.role === 'doctor' ? appointment.patientId : appointment.doctorId;
+    const isActive = chat.isActive && appointment.chatEnabled;
+    socket.emit('join_room', { appointmentId });
+
+    main.innerHTML = `
+      <div class="chat-header">
+        <div class="avatar">${getInitials(other?.name || 'U')}</div>
+        <div class="chat-header-info">
+          <h3>${user.role === 'doctor' ? '' : 'Dr. '}${other?.name || 'Unknown'}</h3>
+          <div class="chat-status"><span class="online-dot ${other?.isOnline ? '' : 'offline'}"></span>${other?.isOnline ? 'Online' : 'Offline'}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-${appointment.status}">${appointment.status}</span>
+          ${user.role === 'doctor' && isActive ? `<button class="btn btn-sm btn-danger" onclick="closeConsultation('${appointmentId}')">Close Case</button>` : ''}
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div id="typing-indicator" class="typing-indicator" style="display:none">
+          <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+        </div>
+      </div>
+      ${isActive ? `
+        <div class="chat-input-area">
+          <div class="chat-input-bar">
+            <textarea class="chat-input" id="msg-input" placeholder="Type a message..." rows="1" onkeydown="handleKeydown(event)" oninput="handleTyping()"></textarea>
+            <div class="chat-input-actions">
+              <button class="icon-btn" onclick="document.getElementById('file-input').click()" title="Attach file">📎</button>
+              <button class="icon-btn send" onclick="sendMessage()" title="Send">➤</button>
+            </div>
+          </div>
+        </div>
+      ` : `<div class="chat-closed-banner">🔒 This consultation has been closed. Chat is disabled.</div>`}
+    `;
+
+    const messagesDiv = document.getElementById('chat-messages');
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) messagesDiv.appendChild(typingIndicator);
+
+    chat.messages.forEach(msg => appendMessage(msg, false));
+    scrollToBottom();
+  } catch (err) {
+    main.innerHTML = `<div class="flex-center" style="height:100%;flex-direction:column;gap:12px"><div class="empty-state"><span class="icon">❌</span><h3>${err.message}</h3></div></div>`;
+  }
+};
+
+function appendMessage(msg, animate = true) {
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+  const isMine = msg.senderId?._id?.toString() === user.id || msg.senderId?.toString() === user.id;
+  const senderName = msg.senderId?.name || user.name;
+
+  if (msg.messageType === 'system') {
+    const el = document.createElement('div');
+    el.className = 'system-message';
+    el.textContent = msg.text;
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) container.insertBefore(el, indicator);
+    else container.appendChild(el);
+    return;
+  }
+
+  const wrap = document.createElement('div');
+  wrap.className = `message-bubble-wrap ${isMine ? 'own' : ''}`;
+  if (animate) wrap.style.animation = 'slideIn 0.2s ease';
+
+  let content = '';
+  if (msg.messageType === 'file' && msg.file) {
+    const icon = getFileIcon(msg.file.mimetype, msg.file.originalName);
+    const size = formatFileSize(msg.file.size);
+    content = `<a class="file-message" href="${msg.file.url}" target="_blank" download="${msg.file.originalName}">
+      <span class="file-icon">${icon}</span>
+      <div class="file-info"><div class="file-name">${msg.file.originalName}</div>${size ? `<div class="file-size">${size}</div>` : ''}</div>
+      <span>⬇</span>
+    </a>`;
+  } else {
+    content = `<div>${escapeHtml(msg.text || '')}</div>`;
+  }
+
+  wrap.innerHTML = `
+    ${!isMine ? `<div class="avatar" style="width:32px;height:32px;font-size:12px">${getInitials(senderName)}</div>` : ''}
+    <div>
+      <div class="message-bubble ${isMine ? 'own' : 'incoming'}">${content}</div>
+      <div class="message-time ${isMine ? 'own' : ''}">${formatTime(msg.timestamp)}</div>
+    </div>
+  `;
+
+  const indicator = document.getElementById('typing-indicator');
+  if (indicator) container.insertBefore(wrap, indicator);
+  else container.appendChild(wrap);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(text));
+  return div.innerHTML;
+}
+
+function scrollToBottom() {
+  const container = document.getElementById('chat-messages');
+  if (container) container.scrollTop = container.scrollHeight;
+}
+
+function updateOnlineStatus(isOnline) {
+  const dot = document.querySelector('.chat-status .online-dot');
+  const text = document.querySelector('.chat-status');
+  if (dot) dot.className = `online-dot ${isOnline ? '' : 'offline'}`;
+  if (text) text.innerHTML = `<span class="online-dot ${isOnline ? '' : 'offline'}"></span>${isOnline ? 'Online' : 'Offline'}`;
+}
+
+function updateChatPreview(appointmentId, message) {
+  const item = document.querySelector(`[data-id="${appointmentId}"]`);
+  if (!item) return;
+  const preview = item.querySelector('.chat-list-item-preview');
+  const time = item.querySelector('.chat-list-item-time');
+  if (preview) preview.textContent = message.text || (message.file ? `📎 ${message.file.originalName}` : 'New message');
+  if (time) time.textContent = 'just now';
+}
+
+window.sendMessage = () => {
+  const input = document.getElementById('msg-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text || !currentAppointmentId) return;
+  socket.emit('send_message', { appointmentId: currentAppointmentId, text });
+  input.value = '';
+  input.style.height = 'auto';
+};
+
+window.handleKeydown = (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+};
+
+window.handleTyping = () => {
+  const input = document.getElementById('msg-input');
+  if (input) { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; }
+  if (!currentAppointmentId) return;
+  socket.emit('typing', { appointmentId: currentAppointmentId, isTyping: true });
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => socket.emit('typing', { appointmentId: currentAppointmentId, isTyping: false }), 1200);
+};
+
+window.handleFileUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file || !currentAppointmentId) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('appointmentId', currentAppointmentId);
+  try {
+    showToast('Uploading file...', 'info');
+    const data = await api.postForm('/chat/upload', fd);
+    socket.emit('send_message', { appointmentId: currentAppointmentId, text: data.fileUrl, messageType: 'file' });
+    appendMessage(data.message);
+    scrollToBottom();
+    showToast('File sent!', 'success');
+  } catch (err) { showToast(err.message, 'error'); }
+  e.target.value = '';
+};
+
+window.closeConsultation = async (appointmentId) => {
+  if (!confirm('Close this consultation? Chat will be permanently disabled.')) return;
+  try {
+    await api.post('/doctors/consultation/close', { appointmentId });
+    showToast('Consultation closed.', 'success');
+    setTimeout(() => openChat(appointmentId), 500);
+  } catch (err) { showToast(err.message, 'error'); }
+};
+
+connectSocket();
+loadChats();
+</script>
+</body>
+</html>
