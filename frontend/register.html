@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join HMS | Register</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/enhanced.css">
+  <style>
+    .split-layout { display: grid; grid-template-columns: 1.1fr 0.9fr; min-height: 100vh; background: #f8fafc; }
+    .split-left { padding: 4rem 6rem; display: flex; flex-direction: column; justify-content: center; background: white; }
+    .split-right { display: flex; align-items: center; justify-content: center; padding: 2rem; background: #f8fafc; overflow-y: auto; }
+    .back-btn-float { position: absolute; top: 2rem; left: 2rem; z-index: 100; display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; background: white; border: 1px solid #e2e8f0; border-radius: var(--radius-pill); color: var(--text-secondary); font-weight: 600; text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    .hero-content { max-width: 520px; }
+    .hero-title { font-size: 4rem; font-weight: 800; line-height: 1.1; margin-bottom: 2rem; color: #0f172a; }
+    .hero-title span { display: block; background: linear-gradient(135deg, var(--brand) 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .auth-card-modern { width: 100%; max-width: 460px; background: white; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.03); padding: 3.5rem 2.5rem; position: relative; }
+    .modern-input-group { margin-bottom: 1.25rem; }
+    .modern-input { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; font-size: 0.95rem; color: var(--text-primary); transition: all 0.2s; }
+    .modern-input:focus { background: white; border-color: var(--brand); box-shadow: 0 0 0 4px rgba(29, 158, 117, 0.1); outline: none; }
+    .btn-submit-modern { width: 100%; background: var(--brand); color: white; border: none; padding: 1.1rem; border-top: 1.1rem; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.3s; margin-top: 1rem; }
+    .btn-submit-modern:hover { background: var(--brand-hover); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(29, 158, 117, 0.15); }
+
+    /* Role Cards specifically for this page */
+    .role-selection-grid { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 2rem; }
+    .fancy-role-card {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+      width: 100%;
+    }
+    .fancy-role-card:hover {
+      border-color: var(--brand);
+      background: white;
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+    }
+    .fancy-role-card.active {
+      border-color: var(--brand);
+      background: rgba(29, 158, 117, 0.03);
+    }
+    .role-icon-box {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--brand);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+    .fancy-role-card h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+    .fancy-role-card p { margin: 0.2rem 0 0; font-size: 0.85rem; color: #64748b; }
+
+    @media (max-width: 1024px) { .split-layout { grid-template-columns: 1fr; } .split-left { display: none; } .split-right { background: white; } }
+  </style>
+</head>
+<body class="light-theme">
+
+  <div class="split-layout">
+    <a href="/login.html" class="back-btn-float" id="register-back-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to Login
+    </a>
+
+    <div class="split-left">
+      <div class="hero-content">
+        <h1 class="hero-title">Join the <span>Healthcare Network.</span></h1>
+        <p class="hero-text" style="font-size:1.1rem; line-height:1.7;">Whether you are a patient seeking care or a medical professional providing it, MediConnect offers the tools you need to thrive in a digital-first world.</p>
+        <div style="padding: 2rem; border-left: 3px solid var(--brand); background: rgba(29, 158, 117, 0.03); border-radius: 0 16px 16px 0;">
+           <p style="font-style: italic; color: #475569; margin:0;">"The best way to manage your health and practice in one unified, secure ecosystem."</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="split-right">
+      <!-- STEP 1: ROLE SELECTION -->
+      <div class="auth-card-modern" id="step-role">
+          <h2 class="font-display" style="font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem;">Join as...</h2>
+          <p style="color: #64748b; margin-bottom: 2rem;">Select your account type to proceed</p>
+
+          <div class="role-selection-grid">
+            <div class="fancy-role-card" onclick="selectRoleAndNext('patient')">
+              <div class="role-icon-box">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </div>
+              <div>
+                <h3>I am a Patient</h3>
+                <p>Book appointments and manage your health.</p>
+              </div>
+            </div>
+
+            <div class="fancy-role-card" onclick="selectRoleAndNext('doctor')">
+              <div class="role-icon-box">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.8 21h14.4M12 3v14m-5-9l5-5 5 5"></path><path d="M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path></svg>
+              </div>
+              <div>
+                <h3>I am a Doctor</h3>
+                <p>Manage your practice and consultations.</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 2.5rem; font-size: 0.95rem; color: #64748b;">
+            Already have an account? <a href="/login.html" style="color: var(--brand); font-weight: 700; text-decoration: none;">Sign in</a>
+          </div>
+      </div>
+
+      <!-- STEP 2: REGISTER FORM -->
+      <div class="auth-card-modern hidden" id="register-form">
+          <div style="cursor:pointer; color:var(--brand); font-weight:700; font-size:0.85rem; display:flex; align-items:center; gap:0.4rem; margin-bottom:1.5rem;" onclick="goBackToRole()">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+             Change Role
+          </div>
+          <h2 class="font-display" id="register-title" style="font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem;">Create account</h2>
+          <p style="color: #64748b; margin-bottom: 2.5rem;" id="register-subtitle">Enter your details to get started</p>
+
+          <form onsubmit="handleRegisterSubmit(event)" novalidate>
+            <input type="hidden" id="register-role-val" value="patient">
+            <div class="modern-input-group">
+              <input type="text" id="register-name" class="modern-input" placeholder="Full name" oninput="validateLength(this, 3)">
+              <span class="error-msg" id="err-reg-name">Name must be at least 3 chars</span>
+            </div>
+            <div class="modern-input-group">
+              <input type="email" id="register-email" class="modern-input" placeholder="Email address" oninput="validateEmail(this)">
+              <span class="error-msg" id="err-reg-email">Valid email is required</span>
+            </div>
+            <div class="modern-input-group hidden" id="specialty-wrapper">
+              <input type="text" id="register-specialty" class="modern-input" placeholder="Medical Specialty" oninput="validateLength(this, 4)">
+              <span class="error-msg" id="err-reg-spec">Specialty is required</span>
+            </div>
+            <div class="modern-input-group">
+              <input type="password" id="register-password" class="modern-input" placeholder="Password" oninput="validatePasswordStrength(this)">
+              <span class="error-msg" id="err-reg-pwd">Min 8 characters needed</span>
+              <div class="pwd-strength hidden" id="pwd-strength-container" style="margin-top: 10px;">
+                <div class="pwd-bar" id="pwd-bar-1"></div><div class="pwd-bar" id="pwd-bar-2"></div><div class="pwd-bar" id="pwd-bar-3"></div><div class="pwd-bar" id="pwd-bar-4"></div>
+                <div class="pwd-label" id="pwd-label">Weak</div>
+              </div>
+            </div>
+            <button type="submit" id="register-submit-btn" class="btn-submit-modern">Create account</button>
+          </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- OTP Modal copied from login -->
+  <div id="otp-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeOtpModal()">
+    <div class="modal-box">
+      <h2 id="otp-title" class="font-display" style="font-size:1.5rem;margin-bottom:0.35rem;">Verify email</h2>
+      <p id="otp-email-display" style="color:var(--text-secondary);margin-bottom:1.25rem;font-size:0.9rem;"></p>
+      <div class="otp-inputs">
+        <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"><input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"><input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"><input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"><input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"><input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+      </div>
+      <button id="verify-otp-btn" class="btn-submit-modern" style="margin-top:1.5rem;" onclick="handleVerifyOtp()">Verify &amp; continue</button>
+      <button class="btn-ghost btn-block" style="margin-top:0.5rem;" onclick="closeOtpModal()">Cancel</button>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/utils.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    function selectRoleAndNext(role) {
+      setRole(role);
+      document.getElementById('step-role').classList.add('hidden');
+      document.getElementById('register-form').classList.remove('hidden');
+      // Hide floating back btn once in form
+      document.getElementById('register-back-btn').style.display = 'none';
+    }
+    function goBackToRole() {
+      document.getElementById('step-role').classList.remove('hidden');
+      document.getElementById('register-form').classList.add('hidden');
+      document.getElementById('register-back-btn').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>

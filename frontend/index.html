@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="HMS — Next-Generation Hospital Management System. Secure login for patients, doctors, and administrators.">
+  <title>HMS | Next-Gen Healthcare Platform</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/enhanced.css">
+</head>
+<body class="light-theme">
+
+  <div class="ambient-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="home-page">
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar improved-nav" id="main-nav">
+      <div class="nav-container">
+        <a class="nav-logo" href="/">
+          <img src="/img/logo.png" alt="HMS Logo" style="height: 50px; width: auto; object-fit: contain;">
+        </a>
+        
+        <div class="nav-links">
+           <!-- Links removed as requested -->
+        </div>
+
+        <div class="nav-actions">
+          <a href="/login.html" class="btn btn-primary btn-sm btn-pill">Login</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ===== MAIN ===== -->
+    <main class="landing-main">
+      
+      <!-- HERO SECTION -->
+      <section class="landing-hero" id="booking">
+        <div class="hero-dot-grid"></div>
+        <div class="width-80">
+          
+          <!-- Top Center — Branding -->
+          <div class="hero-text-content animate-on-scroll" style="position: relative; text-align: center; display: flex; flex-direction: column; align-items: center; z-index: 20; margin-top: 2rem;">
+            <h1>A Great Place care for<br>yourself</h1>
+            <svg width="200" height="15" viewBox="0 0 200 15" fill="none" style="margin-top:-10px; margin-bottom:1rem; opacity:0.8;">
+              <path d="M5 10Q50 -5 100 8T195 5" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <p>Medical recover is most focused in helping you<br>discover your most beautiful smile.</p>
+            <a href="/login.html" class="btn btn-book-hero animate-on-scroll delay-200">Book Appointment</a>
+          </div>
+  
+        </div><!-- /.width-80 -->
+        
+        <!-- Bottom Center — Doctor Team Image (Bleeding downward) -->
+        <img src="/img/hero.png" id="hero-doctor-img" alt="Doctor Team" class="hero-doctors-img animate-on-scroll delay-100">
+      </section>
+
+      <!-- SERVICES SECTION -->
+      <section class="services-section" id="services">
+        <div class="width-80">
+          <div class="services-header animate-on-scroll">
+            <h2>See what we provide to keep you healthy</h2>
+            <p>With World-class Preventive, Prescriptive & Curative Medical Practices, we have been at the helm of Nurturing Healthy Living since the Turn of the New Century.</p>
+          </div>
+
+          <div class="services-container animate-on-scroll delay-200">
+            <!-- Left Side: Interactive Tabs -->
+            <div class="services-list">
+              <div class="service-item active" onclick="switchService('cardiology', this)">Cardiology</div>
+              <div class="service-item" onclick="switchService('anaesthesiology', this)">Anaesthesiology</div>
+              <div class="service-item" onclick="switchService('bariatric', this)">Bariatric Surgery</div>
+              <div class="service-item" onclick="switchService('bloodbank', this)">Blood Bank</div>
+              <div class="service-item" onclick="switchService('endocrinology', this)">Endocrinology & Diabetology</div>
+              <div class="service-item" onclick="switchService('oncology', this)">Medical Oncology</div>
+            </div>
+            
+            <div class="services-divider"></div>
+
+            <!-- Right Side: Dynamic Content Injection -->
+            <div class="services-content" id="services-dynamic-content">
+              <!-- Content injected by JavaScript -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NO STATS SECTION HERE -->
+
+
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer" style="border-top: 1px solid rgba(0,0,0,0.06); background: #fdfdfd;">
+      <div class="width-80 footer-content" style="display:flex; justify-content:space-between; align-items:center; padding: 2.5rem 0;">
+        <div class="footer-brand" style="display:flex; align-items:center;">
+          <img src="/img/logo.png" alt="HMS Logo" style="height: 65px; width: auto; object-fit: contain; margin-left: -5px;">
+        </div>
+        <p class="footer-text" style="color:var(--text-secondary); font-size:0.95rem; margin:0; font-weight:400;">&copy; 2026 Hospital Management System. All rights reserved.</p>
+        <div class="footer-links" style="display:flex; gap:2rem;">
+          <a href="#" style="color:var(--text-secondary); text-decoration:none; font-size:0.95rem; font-weight:500;">Privacy</a>
+          <a href="#" style="color:var(--text-secondary); text-decoration:none; font-size:0.95rem; font-weight:500;">Terms</a>
+          <a href="#" style="color:var(--text-secondary); text-decoration:none; font-size:0.95rem; font-weight:500; margin-right: 2rem;">Support</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+      <!-- OTP modal removed from index -->
+
+  <script src="/js/utils.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+</body>
+</html>

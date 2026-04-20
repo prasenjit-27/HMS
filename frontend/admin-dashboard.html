@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Admin Dashboard — System overview, doctor approvals, user management">
+  <title>Admin Dashboard | HMS</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="light-theme">
+
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+
+      
+      <nav class="sidebar-nav" style="padding-top: 2rem;">
+        <div class="sidebar-nav-item active" data-tab="tab-users" onclick="switchTab(this)">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          User Management
+        </div>
+        <div class="sidebar-nav-item" data-tab="tab-pending" onclick="switchTab(this)">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          Pending Verifications
+          <span class="badge badge-warning" id="pending-badge" style="margin-left:auto; font-size:0.7rem;">0</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-nav-item sidebar-logout" onclick="logout()">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Logout
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <!-- ===== NAVBAR ===== -->
+      <nav class="navbar-dashboard">
+        <div class="nav-content" style="width:100%; padding:0 3rem; max-width:none;">
+          <a class="nav-logo" href="/" style="margin-left:-0.5rem; display:flex; align-items:center; gap:0.5rem; text-decoration:none;">
+            <span class="gradient-text" style="font-weight: 800; font-size: 1.4rem;">Admin Panel</span>
+          </a>
+          <div class="nav-actions" style="margin-right:-0.5rem;">
+            <div class="nav-user">
+              <div class="nav-user-avatar" id="nav-avatar">A</div>
+              <div class="nav-user-info">
+                <span class="nav-user-name" id="nav-name">Admin</span>
+                <span class="nav-user-role">Administrator</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- ===== MAIN CONTENT ===== -->
+      <main class="main-content">
+
+
+
+        <!-- PENDING TAB -->
+        <div class="tab-content" id="tab-pending">
+          <div style="width:100%; padding:0 3rem;">
+            <div class="content-header"><h1 class="font-display">Pending Verifications</h1><p>Review and authorize medical professionals.</p></div>
+            <div id="pending-list-container">
+               <div id="pending-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- USERS TAB (DEFAULT) -->
+        <div class="tab-content active" id="tab-users">
+          <div style="width:100%; padding:0 3rem;">
+            <div class="content-header" style="margin-bottom: 2rem;"><h1 class="font-display">User Management</h1><p>All registered system participants.</p></div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+              <!-- Doctors Column -->
+              <div class="card" style="padding: 0; background: transparent; border: none; box-shadow: none;">
+                <h3 style="margin-bottom: 0.75rem; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; font-weight:700;">
+                  <span class="badge badge-success">Doctors</span>
+                </h3>
+                <div class="table-container">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th style="width: 80px;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="doctors-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Patients Column -->
+              <div class="card" style="padding: 0; background: transparent; border: none; box-shadow: none;">
+                <h3 style="margin-bottom: 0.75rem; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; font-weight:700;">
+                  <span class="badge badge-info">Patients</span>
+                </h3>
+                <div class="table-container">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th style="width: 80px;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="patients-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast Toast -->
+  <div id="toast-container"></div>
+
+  <script src="/js/utils.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

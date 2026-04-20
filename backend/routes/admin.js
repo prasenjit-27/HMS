@@ -1,0 +1,13 @@
+const express = require('express');
+const router = express.Router();
+const adminController = require('../controllers/adminController');
+const auth = require('../middleware/auth');
+const rbac = require('../middleware/rbac');
+router.use(auth, rbac('admin'));
+router.get('/doctors/pending', adminController.getPendingDoctors);
+router.put('/doctors/:id/approve', adminController.approveDoctor);
+router.put('/doctors/:id/reject', adminController.rejectDoctor);
+router.get('/users', adminController.getAllUsers);
+router.delete('/users/:id', adminController.deleteUser);
+router.get('/stats', adminController.getStats);
+module.exports = router;

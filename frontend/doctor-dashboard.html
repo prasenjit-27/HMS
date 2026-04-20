@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Doctor Dashboard — Manage consultations, patients, and professional profile">
+  <title>Doctor Dashboard | HMS</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/enhanced.css">
+</head>
+<body class="light-theme">
+
+  <div class="ambient-bg"><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+
+  <div class="dashboard-page">
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar-dashboard">
+      <div class="nav-content" style="width:100%; padding:0 3rem; max-width:none;">
+        <a class="nav-logo" href="/" style="margin-right:auto; margin-left: -0.5rem;">
+          <img src="/img/logo.png" alt="HMS Logo" style="height: 55px; width: auto; object-fit: contain;">
+        </a>
+        <div class="nav-actions" style="margin-left:auto; margin-right: -0.5rem;">
+           <div class="nav-user">
+             <div class="nav-user-avatar" id="nav-avatar">D</div>
+             <div class="nav-user-info">
+               <span class="nav-user-name" id="nav-name">Doctor</span>
+               <span class="nav-user-role">Doctor</span>
+             </div>
+           </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="dashboard-body">
+      <!-- ===== SIDEBAR ===== -->
+      <aside class="sidebar" id="sidebar">
+        <nav class="sidebar-nav" style="padding-top: 2rem;">
+          <div class="sidebar-nav-item active" data-tab="tab-all" onclick="switchTab(this)">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            Consultations
+          </div>
+          <div class="sidebar-nav-item" data-tab="tab-requests" onclick="switchTab(this)">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            Requests
+          </div>
+          <div class="sidebar-nav-item" data-tab="tab-profile" onclick="switchTab(this)">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            Profile
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="sidebar-nav-item sidebar-logout" onclick="logout()">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Logout
+          </div>
+        </div>
+      </aside>
+
+      <!-- ===== MAIN ===== -->
+      <main class="main-content">
+
+        <!-- All Consultations (Default) -->
+        <div class="tab-content active" id="tab-all">
+          <div style="width:100%; padding:0 3rem; max-width: 1400px;">
+            <div class="content-header">
+               <h1 class="font-display">Clinical Consultations</h1>
+               <p>Your complete history of patient interactions.</p>
+            </div>
+            <div id="approval-banner" class="banner banner-warning hidden" style="margin-bottom: 2rem;">⏳ Your profile is under review by administration.</div>
+            
+            <div class="tabs" style="display:flex; gap:0.75rem; margin-bottom:2rem; flex-wrap:wrap;">
+              <button class="btn btn-secondary active tab-btn" data-filter="all" onclick="filterDocConsultations(this)">All Sessions</button>
+              <button class="btn btn-secondary tab-btn" data-filter="pending" onclick="filterDocConsultations(this)">Pending</button>
+              <button class="btn btn-secondary tab-btn" data-filter="accepted" onclick="filterDocConsultations(this)">Active</button>
+              <button class="btn btn-secondary tab-btn" data-filter="closed" onclick="filterDocConsultations(this)">Closed</button>
+            </div>
+            <div id="all-consultations"><div class="empty-state"><div class="loader" style="margin:0 auto 1rem;"></div><p>Loading records…</p></div></div>
+          </div>
+        </div>
+
+        <!-- Requests -->
+        <div class="tab-content" id="tab-requests">
+          <div style="width:100%; padding:0 3rem; max-width: 1400px;">
+            <div class="content-header"><h1 class="font-display">Incoming Requests</h1><p>Review and accept new patient requests.</p></div>
+            <div id="pending-requests-full"><div class="empty-state"><div class="loader" style="margin:0 auto 1rem;"></div><p>Scanning for requests…</p></div></div>
+          </div>
+        </div>
+
+        <!-- Profile -->
+        <div class="tab-content" id="tab-profile">
+          <div style="width:100%; padding:0 3rem;">
+            <div class="content-header" style="text-align: center; margin-bottom: 1.5rem;">
+               <h1 class="font-display" style="font-size: 1.5rem; margin-bottom: 0;">Professional Profile</h1>
+               <p style="font-size: 0.8rem;">Update your credentials and availability.</p>
+            </div>
+            <div class="card" style="max-width: 1200px; margin: 0 auto; padding: 1.5rem 2.5rem;">
+              <form onsubmit="handleUpdateDoctorProfile(event)">
+                
+                <div style="display: flex; gap: 2.5rem; align-items: flex-start;">
+                  <!-- Left side: Avatar -->
+                  <div class="profile-avatar-upload" style="display:flex; flex-direction:column; align-items:center; flex-shrink: 0; padding-right: 2.5rem; border-right: 1px solid var(--border-subtle);">
+                    <div style="width: 120px; height: 120px; border-radius: 50%; background: var(--gradient-brand); color: white; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: var(--shadow-md); border: 2px solid white;">
+                      <img id="profile-preview-img" src="" alt="Doctor Avatar" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                      <span id="profile-avatar-placeholder">DR</span>
+                    </div>
+                    <label for="profile-image-upload" class="btn btn-secondary btn-sm" style="margin-top: 1rem; cursor: pointer; border-radius: 50px;">
+                      Change Photo
+                    </label>
+                    <input type="file" id="profile-image-upload" accept="image/*" style="display:none;" onchange="if(window.handleProfileImageUpload) handleProfileImageUpload(this.files[0])">
+                  </div>
+
+                  <!-- Right side: Form Fields -->
+                  <div style="flex: 1;">
+                    <div class="form-row" style="margin-bottom: 1rem;">
+                      <div class="form-group" style="margin-bottom: 0.75rem;"><label class="form-label" style="margin-bottom: 0.25rem;">Specialization</label><input class="form-input" type="text" id="doc-specialization" placeholder="e.g. Cardiologist"></div>
+                      <div class="form-group" style="margin-bottom: 0.75rem;"><label class="form-label" style="margin-bottom: 0.25rem;">Years of Experience</label><input class="form-input" type="number" id="doc-experience" min="0" placeholder="Years"></div>
+                    </div>
+                    <div class="form-row" style="margin-bottom: 1rem;">
+                      <div class="form-group" style="margin-bottom: 0.75rem;"><label class="form-label" style="margin-bottom: 0.25rem;">Qualifications</label><input class="form-input" type="text" id="doc-qualifications" placeholder="e.g. MBBS, MD"></div>
+                      <div class="form-group" style="margin-bottom: 0.75rem;"><label class="form-label" style="margin-bottom: 0.25rem;">Consultation Fee (₹)</label><input class="form-input" type="number" id="doc-fee" min="0" placeholder="Amount"></div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;"><label class="form-label" style="margin-bottom: 0.25rem;">Public Contact Number</label><input class="form-input" type="text" id="doc-phone" placeholder="Phone number"></div>
+                    <div class="form-group" style="margin-bottom: 1.25rem;"><label class="form-label" style="margin-bottom: 0.25rem;">Professional Bio</label><textarea class="form-input" id="doc-bio" rows="2" placeholder="Describe your medical expertise…" style="min-height: 60px;"></textarea></div>
+                    
+                    <div style="margin:1rem 0;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; border-left: 4px solid var(--brand); padding-left: 1rem;">
+                        <span style="font-weight:700; font-size: 0.9rem;">Availability Schedule</span>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addAvailabilitySlot()" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">+ Add Slot</button>
+                      </div>
+                      <div id="availability-editor"></div>
+                    </div>
+
+                    <div style="padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+                      <button type="submit" class="btn btn-primary" style="padding: 0.6rem 2rem;">Save Changes</button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/utils.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/doctor.js"></script>
+</body>
+</html>

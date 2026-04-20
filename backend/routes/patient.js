@@ -1,0 +1,15 @@
+const express = require('express');
+const router = express.Router();
+const patientController = require('../controllers/patientController');
+const auth = require('../middleware/auth');
+const rbac = require('../middleware/rbac');
+router.use(auth, rbac('patient'));
+const { upload } = require('../config/cloudinary');
+router.get('/profile', patientController.getProfile);
+router.put('/profile', patientController.updateProfile);
+router.put('/profile-image', upload.single('profileImage'), patientController.updateProfileImage);
+router.get('/doctors', patientController.getDoctors);
+router.get('/doctors/:id', patientController.getDoctorById);
+router.post('/consultations', patientController.requestConsultation);
+router.get('/consultations', patientController.getConsultations);
+module.exports = router;
