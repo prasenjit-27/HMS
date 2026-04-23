@@ -59,6 +59,7 @@ A full-stack **Hospital Management System (HMS)** built with a structured, real-
 ---
 
 ## 📁 Project Structure
+```
 HMS/
 │
 ├── backend/
@@ -87,6 +88,7 @@ HMS/
 ├── .env
 ├── package.json
 └── README.md
+```
 
 
 ---
