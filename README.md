@@ -121,4 +121,4 @@ The system utilizes a **Premium Design System** with:
 
 ## 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
->>>>>>> 1277027 (Fixing frontend and backend conflicts)
+
