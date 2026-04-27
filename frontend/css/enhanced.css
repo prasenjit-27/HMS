@@ -572,33 +572,6 @@
   height: 18px;
 }
 
-/* Password Strength */
-.pwd-strength {
-  display: flex;
-  gap: 4px;
-  margin-top: 8px;
-  align-items: center;
-}
-.pwd-bar {
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(0,0,0,0.08);
-  flex: 1;
-  transition: background 0.3s;
-}
-.dark-theme .pwd-bar { background: rgba(255,255,255,0.1); }
-.pwd-label {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  width: 45px;
-  text-align: right;
-  font-weight: 600;
-  transition: color 0.3s;
-}
-.bar-fill-1 { background: #E24B4A !important; }
-.bar-fill-2 { background: #f97316 !important; }
-.bar-fill-3 { background: #eab308 !important; }
-.bar-fill-4 { background: #1D9E75 !important; }
 
 /* Buttons Overrides */
 .auth-panel .btn-primary {

@@ -1,131 +1,124 @@
-# 🏥 Hospital Management System (HMS)
+# HMS — Modern Hospital Management System
 
-A full-stack **Hospital Management System (HMS)** built with a structured, real-world workflow to streamline hospital operations, enable secure communication, and manage users efficiently using **Role-Based Access Control (RBAC)**.
+A production-ready, full-stack Hospital Management System (HMS) designed with a focus on modern aesthetics, security, and real-time communication. This platform provides specialized interfaces for Administrators, Doctors, and Patients, facilitating seamless healthcare management.
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-### 🔐 Authentication & Security
-- JWT-based authentication  
-- Email verification for signup  
-- Protected routes using middleware  
+### 🔐 Role-Based Access Control (RBAC)
+- **Admin Dashboard**: Verification of doctors, user management, and system-wide overview.
+- **Doctor Dashboard**: Manage consultations, view patient medical history, and handle appointments.
+- **Patient Dashboard**: Profile management, medical records storage, and appointment booking.
 
-### 👥 Role-Based Access Control (RBAC)
-- **Admin**
-  - Verify doctors  
-  - Approve/reject registrations  
-  - Manage (delete) users  
+### 💬 Real-time Communication
+- Instant messaging between doctors and patients powered by **Socket.io**.
+- Persistent chat history stored in MongoDB.
 
-- **Doctor**
-  - Register and get verified by admin  
-  - Manage patient interactions  
-  - Accept/reject consultation requests  
+### 📅 Appointment Management
+- Integrated scheduling system for consultations.
+- Status tracking (Pending, Approved, Rejected).
 
-- **Patient**
-  - Signup/login with email verification  
-  - Choose doctors  
-  - Request consultations  
+### ☁️ Profile & Cloud Storage
+- Seamless image and document uploads using **Multer**.
+- Secure cloud storage for all assets via **Cloudinary**.
 
-### 💬 Real-Time Communication
-- 1:1 chat between doctor and patient using **Socket.IO**
-
-### 📊 Core Functionalities
-- Doctor registration & verification flow  
-- Patient-doctor interaction system  
-- Admin panel for centralized control  
-- Clean and structured workflow  
+### 📧 Automated Notifications
+- Email verification and notifications using **Brevo (Sendinblue)**.
+- Secure OTP-based registration and password recovery.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- HTML  
-- CSS  
-- JavaScript  
-*(Served as static files from the `frontend` folder)*
-
 ### Backend
-- Node.js  
-- Express.js  
+- **Framework**: Node.js & Express.js
+- **Database**: MongoDB (Mongoose ODM)
+- **Real-time**: Socket.io
+- **Security**: JWT (Authentication) & BcryptJS (Hashing)
+- **Storage**: Cloudinary API
+- **Communications**: Brevo API
 
-### Additional Technologies
-- **Database:** MongoDB  
-- **Real-time:** Socket.IO  
-- **Authentication:** JWT  
-- **Media Storage:** Cloudinary  
+### Frontend
+- **Structure**: Semantic HTML5 (Multi-page Application)
+- **Styling**: Vanilla CSS3 with Modern Design Systems (Flexbox, Grid, Animations)
+- **Logic**: Modular Vanilla JavaScript (ES6+)
 
 ---
 
-## 📁 Project Structure
-```
+## 📂 Project Structure
+
+```bash
 HMS/
-│
 ├── backend/
-│ ├── config/
-│ ├── controllers/
-│ ├── middleware/
-│ ├── models/
-│ ├── routes/
-│ ├── socket/
-│ ├── utils/
-│ ├── server.js
-│ └── cleanup.js
-│
+│   ├── config/      # Database & Environment configuration
+│   ├── controllers/ # Business logic handlers
+│   ├── middleware/  # Auth guards & Upload handlers
+│   ├── models/      # Mongoose Schemas (User, Profile, Message, etc.)
+│   ├── routes/      # API Endpoint definitions
+│   ├── socket/      # WebSocket event logic
+│   └── server.js    # Entry point
 ├── frontend/
-│ ├── css/
-│ ├── img/
-│ ├── js/
-│ ├── index.html
-│ ├── login.html
-│ ├── register.html
-│ ├── admin-dashboard.html
-│ ├── doctor-dashboard.html
-│ ├── patient-dashboard.html
-│ └── chat.html
-│
-├── .env
-├── package.json
+│   ├── css/         # Design system & Enhanced styles
+│   ├── js/          # Modular client-side scripts (api.js, auth.js, etc.)
+│   ├── img/         # Static assets
+│   └── *.html       # Dedicated pages (Admin, Doctor, Patient dashboards)
 └── README.md
 ```
 
+---
+
+## ⚙️ Getting Started
+
+### Prerequisites
+- Node.js (v16+)
+- MongoDB Atlas account or local MongoDB instance
+- Cloudinary account
+- Brevo (Sendinblue) API Key
+
+### Installation
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd HMS
+   ```
+
+2. **Backend Setup**:
+   ```bash
+   cd backend
+   npm install
+   ```
+
+3. **Configure Environment Variables**:
+   Create a `.env` file in the `backend` directory and add the following:
+   ```env
+   PORT=5000
+   MONGO_URI=your_mongodb_uri
+   JWT_SECRET=your_jwt_secret
+   CLOUDINARY_CLOUD_NAME=your_name
+   CLOUDINARY_API_KEY=your_key
+   CLOUDINARY_API_SECRET=your_secret
+   BREVO_API_KEY=your_brevo_key
+   EMAIL_FROM=your_email
+   ```
+
+4. **Run the Application**:
+   ```bash
+   # From the backend directory
+   npm run dev
+   ```
+   The server will start at `http://localhost:5000` and serve the frontend statically.
 
 ---
 
-## 🔄 Workflow Overview
-
-1. User signs up (Patient/Doctor) with email verification  
-2. Doctor accounts go through **admin verification**  
-3. Admin can **approve or reject** doctor registrations  
-4. Patients can **choose doctors** and send requests  
-5. Doctors can **accept requests**  
-6. Once accepted → **1:1 chat enabled (Socket.IO)**  
+## 🎨 Design Philosophy
+The system utilizes a **Premium Design System** with:
+- **HSL-tailored colors**: Sophisticated teal and slate palettes.
+- **Micro-animations**: Smooth transitions and hover effects for a tactile feel.
+- **Responsive Layouts**: Optimized for both desktop and mobile accessibility.
 
 ---
 
-## ⚙️ Installation & Setup
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
-cd backend
-npm install
-npm run dev
-
-```
-
-## 🌐 Live Deployed Link
-👉 [Click Here](https://hms-apnh.onrender.com/)
-
----
-
-
-## 🤝 Contributing
-Contributions are welcome! Feel free to fork the repo and submit a pull request.
-
----
-
-## ⭐ Support
-If you like this project, consider giving it a ⭐ on GitHub!
+## 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
+>>>>>>> 1277027 (Fixing frontend and backend conflicts)

@@ -52,17 +52,17 @@
 
     <div class="split-right">
       <!-- SIGN IN CARD ONLY -->
-      <div class="auth-card-modern" id="login-form">
+      <div class="auth-card-modern auth-panel active" id="login-form">
           <h2 class="font-display" style="font-size: 2rem; margin-bottom: 0.5rem; font-weight: 800;">Sign in</h2>
           <p style="color: #64748b; margin-bottom: 2.5rem; font-size: 1rem;">Access your medical dashboard</p>
 
           <form onsubmit="handleLoginSubmit(event)" novalidate>
             <div class="modern-input-group">
-              <input type="email" id="login-email" class="modern-input" placeholder="Email address" oninput="validateEmail(this)">
+              <input type="email" id="login-email" class="modern-input" placeholder="Email address">
               <span class="error-msg" id="err-login-email">Invalid email format</span>
             </div>
             <div class="modern-input-group">
-              <input type="password" id="login-password" class="modern-input" placeholder="Password" oninput="validateLength(this, 1)">
+              <input type="password" id="login-password" class="modern-input" placeholder="Password">
               <span class="error-msg" id="err-login-pwd">Password is required</span>
             </div>
             <a href="#" class="forgot-link" onclick="showForgotPassword(event)">Forgot password?</a>
@@ -75,7 +75,7 @@
       </div>
 
       <!-- FORGOT PASSWORD (HIDDEN) -->
-      <div class="auth-card-modern hidden" id="forgot-password-form">
+      <div class="auth-card-modern auth-panel hidden" id="forgot-password-form">
           <div class="back-link" onclick="toggleForgot(false)" style="color: var(--brand); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.9rem; margin-bottom: 2rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Back to sign in
@@ -84,7 +84,7 @@
           <p style="color: #64748b; margin-bottom: 2.5rem;">We'll send you a verification code</p>
           <form onsubmit="handleForgotPasswordSubmit(event)" novalidate>
             <div class="modern-input-group">
-              <input type="email" id="forgot-email" class="modern-input" placeholder="Email address" oninput="validateEmail(this)">
+              <input type="email" id="forgot-email" class="modern-input" placeholder="Email address">
               <span class="error-msg" id="err-forgot-email">Valid email is required</span>
             </div>
             <button type="submit" id="forgot-submit-btn" class="btn-submit-modern">Send code</button>
@@ -112,12 +112,25 @@
   <script src="/js/auth.js"></script>
   <script>
     function toggleForgot(show) {
-      document.getElementById('login-form').classList.toggle('hidden', show);
-      document.getElementById('forgot-password-form').classList.toggle('hidden', !show);
+      const loginForm = document.getElementById('login-form');
+      const forgotForm = document.getElementById('forgot-password-form');
+      
+      if (show) {
+        loginForm.classList.add('hidden');
+        loginForm.classList.remove('active');
+        forgotForm.classList.remove('hidden');
+        forgotForm.classList.add('active');
+      } else {
+        loginForm.classList.remove('hidden');
+        loginForm.classList.add('active');
+        forgotForm.classList.add('hidden');
+        forgotForm.classList.remove('active');
+      }
     }
-    // Override showForgotPassword from auth.js if necessary
-    window.showForgotPassword = (e) => {
-      e.preventDefault();
+    
+    // Explicitly override the global function
+    window.showForgotPassword = function(e) {
+      if (e) e.preventDefault();
       toggleForgot(true);
     };
   </script>

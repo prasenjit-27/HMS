@@ -102,70 +102,57 @@ function setError(input, msgId, show) {
 
 function validateEmail(input) {
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
-  const msgId = input.id === 'login-email' ? 'err-login-email' : (input.id === 'register-email' ? 'err-reg-email' : 'err-forgot-email');
-  if (input.value.length === 0) { input.classList.remove('is-invalid', 'is-valid'); document.getElementById(msgId)?.classList.remove('visible'); return false; }
+  const msgId = {
+    'login-email': 'err-login-email',
+    'register-email': 'err-reg-email',
+    'forgot-email': 'err-forgot-email'
+  }[input.id];
+
   setError(input, msgId, !valid);
   return valid;
 }
 
 function validateLength(input, min) {
   const valid = input.value.trim().length >= min;
-  const msgId = input.id === 'login-password' ? 'err-login-pwd' : (input.id === 'register-name' ? 'err-reg-name' : 'err-reg-spec');
-  if (input.value.length === 0) { input.classList.remove('is-invalid', 'is-valid'); document.getElementById(msgId)?.classList.remove('visible'); return false; }
+  const msgId = {
+    'login-password': 'err-login-pwd',
+    'register-name': 'err-reg-name',
+    'register-password': 'err-reg-pwd',
+    'register-specialty': 'err-reg-spec'
+  }[input.id];
+
   setError(input, msgId, !valid);
   return valid;
 }
 
-function validatePasswordStrength(input) {
-  const val = input.value;
-  const msgId = 'err-reg-pwd';
-  const container = document.getElementById('pwd-strength-container');
-  const label = document.getElementById('pwd-label');
-
-  if (val.length === 0) {
-    input.classList.remove('is-invalid', 'is-valid');
-    document.getElementById(msgId)?.classList.remove('visible');
-    container.classList.add('hidden');
-    return false;
-  }
-  container.classList.remove('hidden');
-
-  let score = 0;
-  if (val.length > 5) score++;
-  if (val.length >= 8) score++;
-  if (/[A-Z]/.test(val)) score++;
-  if (/[0-9]/.test(val)) score++;
-  if (/[^A-Za-z0-9]/.test(val)) score++;
-  if (score > 4) score = 4;
-
-  const bars = [1, 2, 3, 4].map(n => document.getElementById(`pwd-bar-${n}`));
-  bars.forEach(b => b.className = 'pwd-bar');
-
-  const labels = ['Weak', 'Fair', 'Good', 'Strong'];
-  label.textContent = labels[Math.max(0, score - 1)];
-
-  for (let i = 0; i < score; i++) {
-    bars[i].classList.add(`bar-fill-${score}`);
-  }
-
-  const valid = val.length >= 8;
-  setError(input, msgId, !valid);
-  return valid;
-}
 
 /* ---- Submit Handlers ---- */
 async function handleRegisterSubmit(e) {
   e.preventDefault();
-  const name = document.getElementById('register-name').value.trim();
-  const email = document.getElementById('register-email').value.trim().toLowerCase();
-  const password = document.getElementById('register-password').value;
+  const nameEl = document.getElementById('register-name');
+  const emailEl = document.getElementById('register-email');
+  const passwordEl = document.getElementById('register-password');
   const role = document.getElementById('register-role-val').value;
-  const spec = document.getElementById('register-specialty') ? document.getElementById('register-specialty').value.trim() : '';
+  const specEl = document.getElementById('register-specialty');
 
-  if (!name || !email || !password || (role === 'doctor' && !spec)) {
-    showToast('Please correctly fill all highlighted form fields.', 'error');
+  // Simple validation on submit
+  const isNameValid = validateLength(nameEl, 3);
+  const isEmailValid = validateEmail(emailEl);
+  const isPwdValid = validateLength(passwordEl, 8);
+  let isSpecValid = true;
+  if (role === 'doctor' && specEl) {
+    isSpecValid = validateLength(specEl, 4);
+  }
+
+  if (!isNameValid || !isEmailValid || !isPwdValid || !isSpecValid) {
+    showToast('Please correct the errors in the form.', 'error');
     return;
   }
+
+  const name = nameEl.value.trim();
+  const email = emailEl.value.trim().toLowerCase();
+  const password = passwordEl.value;
+  const spec = specEl ? specEl.value.trim() : '';
 
   const btn = document.getElementById('register-submit-btn');
   btn.disabled = true;
@@ -187,9 +174,19 @@ async function handleRegisterSubmit(e) {
 
 async function handleLoginSubmit(e) {
   e.preventDefault();
-  const email = document.getElementById('login-email').value.trim().toLowerCase();
-  const password = document.getElementById('login-password').value;
-  if (!email || !password) { showToast('Complete all fields before submitting.', 'error'); return; }
+  const emailEl = document.getElementById('login-email');
+  const passwordEl = document.getElementById('login-password');
+
+  const isEmailValid = validateEmail(emailEl);
+  const isPwdValid = validateLength(passwordEl, 1);
+
+  if (!isEmailValid || !isPwdValid) {
+    showToast('Please enter your credentials correctly.', 'error');
+    return;
+  }
+
+  const email = emailEl.value.trim().toLowerCase();
+  const password = passwordEl.value;
 
   const btn = document.getElementById('login-submit-btn');
   btn.disabled = true;
@@ -209,8 +206,15 @@ async function handleLoginSubmit(e) {
 
 async function handleForgotPasswordSubmit(e) {
   e.preventDefault();
-  const email = document.getElementById('forgot-email').value.trim().toLowerCase();
-  if (!email) { showToast('Please provide a valid email format.', 'error'); return; }
+  const emailEl = document.getElementById('forgot-email');
+  const isEmailValid = validateEmail(emailEl);
+
+  if (!isEmailValid) {
+    showToast('Please provide a valid email.', 'error');
+    return;
+  }
+
+  const email = emailEl.value.trim().toLowerCase();
 
   const btn = document.getElementById('forgot-submit-btn');
   btn.disabled = true;

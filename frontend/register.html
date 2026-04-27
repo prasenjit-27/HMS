@@ -117,7 +117,7 @@
       </div>
 
       <!-- STEP 2: REGISTER FORM -->
-      <div class="auth-card-modern hidden" id="register-form">
+      <div class="auth-card-modern auth-panel hidden" id="register-form">
           <div style="cursor:pointer; color:var(--brand); font-weight:700; font-size:0.85rem; display:flex; align-items:center; gap:0.4rem; margin-bottom:1.5rem;" onclick="goBackToRole()">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
              Change Role
@@ -128,24 +128,20 @@
           <form onsubmit="handleRegisterSubmit(event)" novalidate>
             <input type="hidden" id="register-role-val" value="patient">
             <div class="modern-input-group">
-              <input type="text" id="register-name" class="modern-input" placeholder="Full name" oninput="validateLength(this, 3)">
+              <input type="text" id="register-name" class="modern-input" placeholder="Full name">
               <span class="error-msg" id="err-reg-name">Name must be at least 3 chars</span>
             </div>
             <div class="modern-input-group">
-              <input type="email" id="register-email" class="modern-input" placeholder="Email address" oninput="validateEmail(this)">
+              <input type="email" id="register-email" class="modern-input" placeholder="Email address">
               <span class="error-msg" id="err-reg-email">Valid email is required</span>
             </div>
             <div class="modern-input-group hidden" id="specialty-wrapper">
-              <input type="text" id="register-specialty" class="modern-input" placeholder="Medical Specialty" oninput="validateLength(this, 4)">
+              <input type="text" id="register-specialty" class="modern-input" placeholder="Medical Specialty">
               <span class="error-msg" id="err-reg-spec">Specialty is required</span>
             </div>
             <div class="modern-input-group">
-              <input type="password" id="register-password" class="modern-input" placeholder="Password" oninput="validatePasswordStrength(this)">
+              <input type="password" id="register-password" class="modern-input" placeholder="Password">
               <span class="error-msg" id="err-reg-pwd">Min 8 characters needed</span>
-              <div class="pwd-strength hidden" id="pwd-strength-container" style="margin-top: 10px;">
-                <div class="pwd-bar" id="pwd-bar-1"></div><div class="pwd-bar" id="pwd-bar-2"></div><div class="pwd-bar" id="pwd-bar-3"></div><div class="pwd-bar" id="pwd-bar-4"></div>
-                <div class="pwd-label" id="pwd-label">Weak</div>
-              </div>
             </div>
             <button type="submit" id="register-submit-btn" class="btn-submit-modern">Create account</button>
           </form>
