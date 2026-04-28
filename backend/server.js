@@ -10,6 +10,7 @@ const adminRoutes = require('./routes/admin');
 const doctorRoutes = require('./routes/doctor');
 const patientRoutes = require('./routes/patient');
 const chatRoutes = require('./routes/chat');
+const contactRoutes = require('./routes/contact');
 const initChatSocket = require('./socket/chatSocket');
 const app = express();
 const server = http.createServer(app);
@@ -30,6 +31,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/doctor', doctorRoutes);
 app.use('/api/patient', patientRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/contact', contactRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });

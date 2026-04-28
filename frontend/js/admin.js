@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadStats();
   loadPendingDoctors();
   loadUsers();
+  loadMessages();
 });
 
 let currentSubRole = 'doctor';
@@ -111,7 +112,8 @@ async function approveDoctor(id) {
 }
 
 async function rejectDoctor(id) {
-  if (!confirm('Reject this doctor registration?')) return;
+  const confirmed = await showConfirm('Reject this doctor registration?');
+  if (!confirmed) return;
   try {
     showLoader();
     await api.put(`/admin/doctors/${id}/reject`);
@@ -167,13 +169,63 @@ function renderUsersTable(users, tbodyId) {
 }
 
 async function confirmDeleteUser(id, name) {
-  if (!confirm(`Are you sure you want to PERMANENTLY delete user "${name}"? This will remove them from the database and cannot be undone.`)) return;
+  const confirmed = await showConfirm(`Are you sure you want to PERMANENTLY delete user "${name}"? This will remove them from the database and cannot be undone.`);
+  if (!confirmed) return;
   try {
     showLoader();
     await api.delete(`/admin/users/${id}`);
     showToast('User permanently deleted.', 'info');
     await loadUsers();
     await loadStats();
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
+/* ---- Contact Messages ---- */
+async function loadMessages() {
+  try {
+    const res = await api.get('/admin/contact-messages');
+    renderMessages(res.data);
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+function renderMessages(messages) {
+  const tbody = document.getElementById('messages-tbody');
+  if (!tbody) return;
+  if (messages.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:1.5rem;">No messages found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = messages.map(msg => `
+    <tr>
+      <td style="white-space:nowrap; font-size:0.85rem;">${new Date(msg.createdAt).toLocaleDateString()}</td>
+      <td style="font-weight:600; font-size:0.85rem;">${escapeHtml(msg.firstName + ' ' + msg.lastName)}</td>
+      <td style="color:var(--text-secondary);font-size:0.85rem;"><a href="mailto:${escapeHtml(msg.email)}">${escapeHtml(msg.email)}</a></td>
+      <td style="font-size:0.85rem; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(msg.message)}">${escapeHtml(msg.message)}</td>
+      <td>
+        <div style="display:flex;gap:0.5rem;">
+          <a href="mailto:${escapeHtml(msg.email)}?subject=Re: Your Contact Request to HMS" class="btn btn-secondary btn-sm" style="text-decoration:none; padding: 0.25rem 0.5rem;">Reply</a>
+          <button class="btn btn-danger btn-sm" style="padding: 0.25rem 0.5rem;" onclick="deleteMessage('${msg._id}')">Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function deleteMessage(id) {
+  const confirmed = await showConfirm('Are you sure you want to delete this message?');
+  if (!confirmed) return;
+  try {
+    showLoader();
+    await api.delete(`/admin/contact-messages/${id}`);
+    showToast('Message deleted successfully.', 'info');
+    await loadMessages();
   } catch (error) {
     showToast(error.message, 'error');
   } finally {

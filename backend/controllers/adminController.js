@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const DoctorProfile = require('../models/DoctorProfile');
+const ContactMessage = require('../models/ContactMessage');
 exports.getPendingDoctors = async (req, res) => {
   try {
     const profiles = await DoctorProfile.find({ status: 'pending' })
@@ -115,5 +116,28 @@ exports.getStats = async (req, res) => {
   } catch (error) {
     console.error('Get stats error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch stats.' });
+  }
+};
+
+exports.getContactMessages = async (req, res) => {
+  try {
+    const messages = await ContactMessage.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: messages });
+  } catch (error) {
+    console.error('Get contact messages error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch contact messages.' });
+  }
+};
+
+exports.deleteContactMessage = async (req, res) => {
+  try {
+    const message = await ContactMessage.findByIdAndDelete(req.params.id);
+    if (!message) {
+      return res.status(404).json({ success: false, message: 'Message not found.' });
+    }
+    res.status(200).json({ success: true, message: 'Message deleted successfully.' });
+  } catch (error) {
+    console.error('Delete contact message error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete message.' });
   }
 };

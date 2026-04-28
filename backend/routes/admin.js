@@ -10,4 +10,6 @@ router.put('/doctors/:id/reject', adminController.rejectDoctor);
 router.get('/users', adminController.getAllUsers);
 router.delete('/users/:id', adminController.deleteUser);
 router.get('/stats', adminController.getStats);
+router.get('/contact-messages', adminController.getContactMessages);
+router.delete('/contact-messages/:id', adminController.deleteContactMessage);
 module.exports = router;

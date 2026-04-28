@@ -91,6 +91,60 @@ function showToast(message, type = 'info', duration = 3500) {
   }, duration);
 }
 
+/* ---------- Custom Confirm Modal ---------- */
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    Object.assign(overlay.style, {
+      position: 'fixed', inset: '0', background: 'rgba(0,0,0,0.5)',
+      backdropFilter: 'blur(8px)', zIndex: '100000', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+      opacity: '0', transition: 'opacity 0.3s ease'
+    });
+
+    const modal = document.createElement('div');
+    Object.assign(modal.style, {
+      background: 'var(--bg-surface)', padding: '2.5rem 2rem', borderRadius: '24px',
+      boxShadow: 'var(--shadow-lg)', width: '90%', maxWidth: '420px',
+      transform: 'scale(0.95)', transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
+      textAlign: 'center', border: '1px solid var(--border-subtle)'
+    });
+
+    // We make sure it fits light/dark theme seamlessly
+    modal.innerHTML = `
+      <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(245, 158, 11, 0.1); color: var(--warning); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; border: 1px solid rgba(245, 158, 11, 0.2);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </div>
+      <h3 style="margin-bottom: 0.75rem; font-size: 1.35rem; color: var(--text-primary); font-family: var(--font-display);">Action Required</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem; line-height: 1.6;">${escapeHtml(message)}</p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button id="confirmCancelBtn" class="btn btn-secondary" style="flex: 1; padding: 0.75rem; border-radius: 12px; font-weight: 600;">Cancel</button>
+        <button id="confirmOkBtn" class="btn btn-primary" style="flex: 1; padding: 0.75rem; border-radius: 12px; font-weight: 600; background: var(--warning); color: #fff;">Confirm</button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+      overlay.style.opacity = '1';
+      modal.style.transform = 'scale(1)';
+    });
+
+    const close = (result) => {
+      overlay.style.opacity = '0';
+      modal.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        overlay.remove();
+        resolve(result);
+      }, 300);
+    };
+
+    modal.querySelector('#confirmCancelBtn').addEventListener('click', () => close(false));
+    modal.querySelector('#confirmOkBtn').addEventListener('click', () => close(true));
+  });
+}
+
 /* ---------- Loader ---------- */
 function showLoader() {
   let el = document.getElementById('global-loader');

@@ -301,7 +301,8 @@ async function acceptConsultation(id) {
 }
 
 async function rejectConsultation(id) {
-  if (!confirm('Reject this consultation?')) return;
+  const confirmed = await showConfirm('Reject this consultation?');
+  if (!confirmed) return;
   try {
     showLoader();
     await api.put(`/doctor/consultations/${id}/reject`);
@@ -315,7 +316,8 @@ async function rejectConsultation(id) {
 }
 
 async function closeConsultation(id) {
-  if (!confirm('Close this consultation? The chat becomes read-only.')) return;
+  const confirmed = await showConfirm('Close this consultation? The chat becomes read-only.');
+  if (!confirmed) return;
   try {
     showLoader();
     await api.put(`/doctor/consultations/${id}/close`);

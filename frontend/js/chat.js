@@ -158,7 +158,8 @@ async function handleFileUpload(e) {
   e.target.value = '';
 }
 async function closeChat() {
-  if (!confirm('Close this consultation? The chat will become read-only.')) return;
+  const confirmed = await showConfirm('Close this consultation? The chat will become read-only.');
+  if (!confirmed) return;
   try {
     await api.put(`/doctor/consultations/${consultationId}/close`);
     showToast('Consultation closed.', 'info');
