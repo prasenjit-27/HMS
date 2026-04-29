@@ -97,9 +97,9 @@
             <div class="card" style="max-width: 1200px; margin: 0 auto; padding: 1.5rem 2.5rem;">
               <form onsubmit="handleUpdateDoctorProfile(event)">
                 
-                <div style="display: flex; gap: 2.5rem; align-items: flex-start;">
+                <div class="doctor-profile-layout">
                   <!-- Left side: Avatar -->
-                  <div class="profile-avatar-upload" style="display:flex; flex-direction:column; align-items:center; flex-shrink: 0; padding-right: 2.5rem; border-right: 1px solid var(--border-subtle);">
+                  <div class="profile-avatar-upload doctor-avatar-col">
                     <div style="width: 120px; height: 120px; border-radius: 50%; background: var(--gradient-brand); color: white; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: var(--shadow-md); border: 2px solid white;">
                       <img id="profile-preview-img" src="" alt="Doctor Avatar" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                       <span id="profile-avatar-placeholder">DR</span>
@@ -111,7 +111,7 @@
                   </div>
 
                   <!-- Right side: Form Fields -->
-                  <div style="flex: 1;">
+                  <div class="doctor-form-col">
                     <div class="form-row" style="margin-bottom: 1rem;">
                       <div class="form-group" style="margin-bottom: 0.75rem;"><label class="form-label" style="margin-bottom: 0.25rem;">Specialization</label><input class="form-input" type="text" id="doc-specialization" placeholder="e.g. Cardiologist"></div>
                       <div class="form-group" style="margin-bottom: 0.75rem;"><label class="form-label" style="margin-bottom: 0.25rem;">Years of Experience</label><input class="form-input" type="number" id="doc-experience" min="0" placeholder="Years"></div>

@@ -32,10 +32,33 @@
         </div>
 
         <div class="nav-actions">
-          <a href="/login.html" class="btn btn-primary btn-sm btn-pill">Login</a>
+          <a href="/login.html" class="btn btn-primary btn-sm btn-pill hide-on-mobile">Login</a>
+          <button id="mobile-menu-toggle" class="btn btn-ghost btn-icon mobile-only" style="margin-left: 0.5rem;" onclick="toggleMobileMenu()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
         </div>
       </div>
     </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-nav-overlay" class="mobile-nav-overlay">
+      <div class="mobile-nav-header">
+        <img src="/img/logo.png" alt="HMS Logo" style="height: 45px; width: auto; object-fit: contain;">
+        <button class="btn btn-ghost btn-icon" onclick="toggleMobileMenu()">
+           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="mobile-nav-content">
+        <div class="mobile-nav-links">
+          <a href="#about" onclick="toggleMobileMenu()">About Us</a>
+          <a href="#services" onclick="toggleMobileMenu()">Services</a>
+          <a href="#contact" onclick="toggleMobileMenu()">Contact</a>
+        </div>
+        <div class="mobile-nav-footer">
+          <a href="/login.html" class="btn btn-primary btn-pill" style="width: 100%; padding: 1.1rem; font-size: 1.1rem; text-align: center;">Login / Register</a>
+        </div>
+      </div>
+    </div>
 
     <!-- ===== MAIN ===== -->
     <main class="landing-main">
@@ -62,8 +85,8 @@
       </section>
 
       <!-- ABOUT SECTION -->
-      <section class="about-section" id="about" style="padding: 6rem 0; background: var(--bg-surface);">
-        <div class="width-80" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;">
+      <section class="about-section" id="about">
+        <div class="width-80 about-grid">
           <div class="about-content animate-on-scroll">
             <h2 style="font-size: 2.5rem; margin-bottom: 1.5rem; color: var(--text-primary); line-height: 1.2;">Committed to Excellence in Healthcare</h2>
             <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 1.1rem; line-height: 1.7;">At HMS, we merge advanced medical technology with compassionate care. Our platform bridges the gap between patients and top-tier medical professionals, ensuring that your journey to wellness is seamless, efficient, and deeply personal.</p>
@@ -120,16 +143,16 @@
       </section>
 
       <!-- CONTACT SECTION -->
-      <section class="contact-section" id="contact" style="padding: 6rem 0; background: var(--bg-body);">
+      <section class="contact-section" id="contact">
         <div class="width-80">
           <div class="services-header animate-on-scroll" style="text-align: center; margin-bottom: 4rem;">
             <h2 style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-primary);">Get In Touch</h2>
             <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; font-size: 1.1rem;">Have questions or need assistance? Our dedicated support team is here to help you navigate your healthcare journey.</p>
           </div>
           
-          <div class="contact-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start;">
+          <div class="contact-grid">
             <!-- Contact Info -->
-            <div class="contact-info animate-on-scroll" style="display: flex; flex-direction: column; gap: 2rem;">
+            <div class="contact-info animate-on-scroll">
               <div class="card" style="padding: 2rem; display: flex; align-items: flex-start; gap: 1.5rem;">
                 <div style="width: 50px; height: 50px; border-radius: var(--radius-full); background: rgba(29, 158, 117, 0.1); color: var(--brand); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
@@ -188,7 +211,7 @@
 
     <!-- ===== FOOTER ===== -->
     <footer class="footer" style="border-top: 1px solid rgba(0,0,0,0.06); background: #fdfdfd;">
-      <div class="width-80 footer-content" style="display:flex; justify-content:space-between; align-items:center; padding: 2.5rem 0;">
+      <div class="width-80 footer-content">
         <div class="footer-brand" style="display:flex; align-items:center;">
           <img src="/img/logo.png" alt="HMS Logo" style="height: 65px; width: auto; object-fit: contain; margin-left: -5px;">
         </div>
@@ -231,6 +254,15 @@
           }
         });
       });
+
+      // Mobile Menu Toggle logic
+      window.toggleMobileMenu = function() {
+        const overlay = document.getElementById('mobile-nav-overlay');
+        if (overlay) {
+          overlay.classList.toggle('active');
+          document.body.style.overflow = overlay.classList.contains('active') ? 'hidden' : '';
+        }
+      };
 
       const contactForm = document.getElementById('contactForm');
       if (contactForm) {

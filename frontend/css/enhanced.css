@@ -282,13 +282,44 @@ section[id] {
   transform: rotate(15deg);
 }
 
+/* ---- General Section Styles ---- */
+.about-section {
+  padding: 6rem 0;
+  background: var(--bg-surface);
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.contact-section {
+  padding: 6rem 0;
+  background: var(--bg-body);
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
 /* ---- New Services Section ---- */
 .services-section {
-  background: var(--bg-body); /* Changed to white to fit the "white section below" constraint */
+  background: var(--bg-body);
   color: var(--text-primary);
-  padding: clamp(140px, 15vw, 200px) 0 6rem 0; /* Fluid padding to accommodate fluid bleed */
+  padding: 6rem 0;
   position: relative;
-  z-index: 1; /* Keep strictly behind the overlap doctor img */
+  z-index: 1;
 }
 .services-header {
   text-align: center;
@@ -403,10 +434,23 @@ section[id] {
 
 /* Mobile Responsive Adjustments */
 @media (max-width: 768px) {
+  .improved-nav .nav-links {
+    display: none;
+  }
+  .improved-nav .nav-container {
+    padding: 0 1.5rem;
+  }
+  .about-section, .services-section, .contact-section {
+    padding: 4rem 0;
+  }
   .landing-hero > .width-80 {
     grid-template-columns: 1fr;
     text-align: center;
     padding-top: 2rem;
+  }
+  .about-grid, .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
   }
   .services-container {
     flex-direction: column;

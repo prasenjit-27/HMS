@@ -168,7 +168,24 @@ function hideLoader() {
 }
 
 /* ---------- Sidebar / Tabs ---------- */
-function initSidebar() { /* placeholder for mobile toggle if needed */ }
+function initSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const navbarContent = document.querySelector('.navbar-dashboard .nav-content');
+  if (sidebar && navbarContent) {
+    if (!document.getElementById('mobile-menu-btn')) {
+      const btn = document.createElement('button');
+      btn.id = 'mobile-menu-btn';
+      btn.className = 'btn btn-ghost btn-icon mobile-only';
+      btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
+      
+      navbarContent.insertBefore(btn, navbarContent.firstChild);
+      
+      btn.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+      });
+    }
+  }
+}
 
 function switchTab(el) {
   document.querySelectorAll('.sidebar-nav-item').forEach(n => n.classList.remove('active'));
@@ -334,4 +351,5 @@ function initScrollAnimations() {
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initScrollAnimations();
+  initSidebar();
 });
